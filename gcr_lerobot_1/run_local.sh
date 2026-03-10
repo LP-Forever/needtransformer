@@ -1,6 +1,7 @@
 #conda activate lerobot_v2_1
 export PYTHONPATH=$PYTHONPATH:$(pwd)
-CUDA_VISIBLE_DEVICES=0,1,2,3 deepspeed --num_gpus=4 ./lerobot/scripts/dps_train_2.py \
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 deepspeed --num_gpus=8 ./lerobot/scripts/dps_train_2.py \
+    --master_port=32010 \
     --deepspeed="./ds_zero2_40G.json" \
     --policy.type="pi05" \
     --policy.use_lora=true \
