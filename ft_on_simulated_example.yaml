@@ -59,6 +59,13 @@ environment: # select the image, clone your code, install the packages
     - conda run --name lerobot pip install termcolor
     - conda run --name lerobot pip install transformers==4.56.0
     - conda run --name lerobot pip install numpy==1.26.4
+    - conda run --name lerobot pip install termcolor
+    - conda run --name lerobot pip install transformers==4.56.0
+    - conda run --name lerobot pip install accelerate
+    - conda run --name lerobot pip install diffusers
+    - conda run --name lerobot pip install tiktoken
+    - conda run --name lerobot pip install sentencepiece
+    - conda run --name lerobot pip install -e .
     # - pip install torch==2.4.1 torchvision==0.21.0
   # registry: singularitybase.azurecr.io # cached base images under amlt-sing/* seems not usable now, use singularitybase instead
 
@@ -90,8 +97,7 @@ jobs:
       # pizza_long_full_hz_2.5, american_data, cup_1, cup_2, cup_2.5hz, simpler_fractal
       # finetune_on_40G: pizza
       # finetune_new_data_80G: cup, block, sauce
-      - pip install termcolor transformers==4.56.0 accelerate diffusers tiktoken sentencepiece
-      - conda run --name lerobot pip install -e .
+      
       - conda run --name lerobot bash ./run_local.sh
       #- conda run --name lerobot bash finetune_new_data.sh --use_state true --job_name $JOB_NAME --data_mix "cup_hz_4_plus_1103" --log_dir "logs" --log_freq 20 --model_type "pi05" --train_expert_only false --freeze_vision false --img_aug false --loss_type "xvla_loss" --wandb.enable true --warm_up_steps 1000 --decay_steps 60000 --save_freq 6000 --add_new_tokens false --use_new_tokens false --action_type "ort6d_new_time" --pt_path "/mnt/wangxiaofa/pi0_05/pi05_base/model_new.pt"
       
