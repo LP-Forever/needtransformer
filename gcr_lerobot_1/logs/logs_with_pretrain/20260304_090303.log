@@ -1,0 +1,468 @@
+[2026-03-04 09:03:03] [rank: 0] [INFO] - {'batch_size': 16,
+ 'dataset': {'data_mix': 'cup_hz_4_plus_1103',
+             'episodes': None,
+             'image_transforms': {'enable': False,
+                                  'img_size': 224,
+                                  'max_num_transforms': 3,
+                                  'random_order': True,
+                                  'tfs': {'brightness': {'kwargs': {'brightness': [0.8,
+                                                                                   1.2]},
+                                                         'type': 'ColorJitter',
+                                                         'weight': 1.0},
+                                          'contrast': {'kwargs': {'contrast': [0.8,
+                                                                               1.2]},
+                                                       'type': 'ColorJitter',
+                                                       'weight': 1.0},
+                                          'hue': {'kwargs': {'hue': [-0.05,
+                                                                     0.05]},
+                                                  'type': 'ColorJitter',
+                                                  'weight': 1.0},
+                                          'saturation': {'kwargs': {'saturation': [0.5,
+                                                                                   1.5]},
+                                                         'type': 'ColorJitter',
+                                                         'weight': 1.0},
+                                          'sharpness': {'kwargs': {'sharpness': [0.5,
+                                                                                 1.5]},
+                                                        'type': 'SharpnessJitter',
+                                                        'weight': 1.0}}},
+             'repo_id': 'any/simulted',
+             'revision': None,
+             'root': '/home/v-wangxiaofa/.cache/huggingface/lerobot',
+             'split': 'train',
+             'train_num': 1500,
+             'use_imagenet_stats': True,
+             'use_state': True,
+             'video_backend': 'pyav',
+             'wrist_image_transforms': {'enable': True,
+                                        'img_size': 224,
+                                        'max_num_transforms': 3,
+                                        'random_order': True,
+                                        'tfs': {'brightness': {'kwargs': {'brightness': [0.8,
+                                                                                         1.2]},
+                                                               'type': 'ColorJitter',
+                                                               'weight': 1.0},
+                                                'contrast': {'kwargs': {'contrast': [0.8,
+                                                                                     1.2]},
+                                                             'type': 'ColorJitter',
+                                                             'weight': 1.0},
+                                                'crop_resize': {'kwargs': {'ratio': [1.0,
+                                                                                     1.0],
+                                                                           'scale': [0.95,
+                                                                                     0.95],
+                                                                           'size': [256,
+                                                                                    256]},
+                                                                'type': 'RandomResizedCrop',
+                                                                'weight': 1.0},
+                                                'hue': {'kwargs': {'hue': [-0.05,
+                                                                           0.05]},
+                                                        'type': 'ColorJitter',
+                                                        'weight': 1.0},
+                                                'rotate': {'kwargs': {'degrees': [-5,
+                                                                                  5]},
+                                                           'type': 'RandomRotate',
+                                                           'weight': 1.0},
+                                                'saturation': {'kwargs': {'saturation': [0.5,
+                                                                                         1.5]},
+                                                               'type': 'ColorJitter',
+                                                               'weight': 1.0},
+                                                'sharpness': {'kwargs': {'sharpness': [0.5,
+                                                                                       1.5]},
+                                                              'type': 'SharpnessJitter',
+                                                              'weight': 1.0}}}},
+ 'deepspeed': './ds_zero2_40G.json',
+ 'device': 'cuda',
+ 'env': None,
+ 'eval': {'batch_size': 50, 'n_episodes': 50, 'use_async_envs': False},
+ 'eval_freq': 2000,
+ 'gradient_accumulation_steps': 4,
+ 'job_name': 'cup_test_training',
+ 'local_rank': 0,
+ 'log_dir': 'logs',
+ 'log_freq': 100,
+ 'mixed_precision': None,
+ 'num_workers': 8,
+ 'optimizer': {'betas': [0.9, 0.95],
+               'eps': 1e-08,
+               'grad_clip_norm': 1.0,
+               'lr': 2.5e-05,
+               'type': 'adamw',
+               'weight_decay': 0.01},
+ 'output_dir': '/home/v-wangxiaofa/amlt_jobs/amlt',
+ 'policy': {'GRIPPER_SCALE': 1.0,
+            'ROT_SCALE': 1.0,
+            'XYZ_SCALE': 1.0,
+            'action_expert_variant': 'gemma_300m',
+            'action_type': 'rpy',
+            'add_new_tokens': False,
+            'chunk_size': 50,
+            'compile_mode': 'max-autotune',
+            'compile_model': False,
+            'device': None,
+            'dtype': 'float32',
+            'empty_cameras': 0,
+            'freeze_vision_encoder': True,
+            'gradient_checkpointing': True,
+            'image_resolution': [224, 224],
+            'input_features': {},
+            'loss_type': 'mse_loss',
+            'max_action_dim': 32,
+            'max_period': 4.0,
+            'max_state_dim': 32,
+            'min_period': 0.004,
+            'n_action_steps': 50,
+            'n_obs_steps': 1,
+            'normalization_mapping': {'ACTION': <NormalizationMode.QUANTILES: 'QUANTILES'>,
+                                      'STATE': <NormalizationMode.QUANTILES: 'QUANTILES'>,
+                                      'VISUAL': <NormalizationMode.IDENTITY: 'IDENTITY'>},
+            'num_inference_steps': 10,
+            'optimizer_betas': [0.9, 0.95],
+            'optimizer_eps': 1e-08,
+            'optimizer_grad_clip_norm': 1.0,
+            'optimizer_lr': 2.5e-05,
+            'optimizer_weight_decay': 0.01,
+            'output_features': {},
+            'paligemma_variant': 'gemma_2b',
+            'pretrained_path': '/Data/lzl/weights/pi_zero',
+            'pt_weight_path': '/home/v-wangxiaofa/amlt_jobs/model_new.pt',
+            'scheduler_decay_lr': 2.5e-06,
+            'scheduler_decay_steps': 30000,
+            'scheduler_warmup_steps': 1000,
+            'time_sampling_beta_alpha': 1.5,
+            'time_sampling_beta_beta': 1.0,
+            'time_sampling_offset': 0.001,
+            'time_sampling_scale': 0.999,
+            'tokenizer_max_length': 200,
+            'train_expert_only': False,
+            'type': 'pi05',
+            'use_lora': True,
+            'use_new_tokens': False},
+ 'resume': False,
+ 'save_checkpoint': True,
+ 'save_freq': 5000,
+ 'scheduler': {'decay_lr': 2.5e-06,
+               'num_decay_steps': 30000,
+               'num_warmup_steps': 1000,
+               'peak_lr': 2.5e-05,
+               'type': 'cosine_decay_with_warmup'},
+ 'seed': 1000,
+ 'steps': 30000,
+ 'use_amp': False,
+ 'use_policy_training_preset': True,
+ 'wandb': {'disable_artifact': False,
+           'enable': False,
+           'entity': None,
+           'id': '7258056839.59298-05824d03-26a7-488c-abda-e9b82731f1c5',
+           'notes': None,
+           'project': 'pi0-ft-simulated'},
+ 'weight_resume': False}
+[2026-03-04 09:03:03] [rank: 0] [INFO] - [1m[33mLogs will be saved locally.[0m
+[2026-03-04 09:03:06] [rank: 0] [INFO] - Data load from:/home/v-wangxiaofa/.cache/huggingface/lerobot
+[2026-03-04 09:03:06] [rank: 0] [INFO] - Dataset: <lerobot.common.datasets.lerobot_dataset.MultiSameDataset object at 0x7861b81f5940>
+[2026-03-04 09:03:06] [rank: 0] [INFO] - Creating policy...
+[2026-03-04 09:03:06] [rank: 0] [INFO] - Setting model's tokenizer_max_length to 100
+[2026-03-04 09:03:06] [rank: 0] [INFO] - Still creating policy...
+[2026-03-04 09:05:00] [rank: 0] [INFO] - Policy model created...
+[2026-03-04 09:05:00] [rank: 0] [INFO] - 📦 action_expert 参数数量: 0.691 B
+[2026-03-04 09:05:00] [rank: 0] [INFO] - 🎯 可训练参数数量: 3.204 B
+[2026-03-04 09:05:00] [rank: 0] [INFO] - 🔧 LoRA 参数数量: 0.000 B
+[2026-03-04 09:05:00] [rank: 0] [INFO] - 📷 视觉编码器参数数量: 0.412 B
+[2026-03-04 09:05:00] [rank: 0] [INFO] - 📊 模型总参数数量: 3.617 B
+[2026-03-04 09:05:00] [rank: 0] [INFO] - Creating optimizer and scheduler
+[2026-03-04 09:05:00] [rank: 0] [INFO] - [1m[33mOutput dir:[0m /home/v-wangxiaofa/amlt_jobs/amlt
+[2026-03-04 09:05:00] [rank: 0] [INFO] - cfg.steps=30000 (30K)
+[2026-03-04 09:05:00] [rank: 0] [INFO] - dataset.num_frames=25241 (25K)
+[2026-03-04 09:05:00] [rank: 0] [INFO] - dataset.num_episodes=466
+[2026-03-04 09:05:00] [rank: 0] [INFO] - num_learnable_params=3204315168 (3B)
+[2026-03-04 09:05:00] [rank: 0] [INFO] - num_total_params=3616757564 (4B)
+[2026-03-04 09:05:00] [rank: 0] [INFO] - Creating DistributedSampler
+[2026-03-04 09:05:03] [rank: 0] [INFO] - Training batch size:16
+[2026-03-04 09:05:03] [rank: 0] [INFO] - Start training on 1 devices
+[2026-03-04 09:10:08] [rank: 0] [INFO] - step:50 smpl:800 ep:15 epch:0.03 loss:1.668 grdn:0.000 lr:6.4e-07 updt_s:6.011 data_s:0.031 optim_s:0.000
+[2026-03-04 09:15:12] [rank: 0] [INFO] - step:100 smpl:2K ep:30 epch:0.06 loss:1.453 grdn:0.000 lr:1.9e-06 updt_s:6.066 data_s:0.001 optim_s:0.000
+[2026-03-04 09:20:15] [rank: 0] [INFO] - step:150 smpl:2K ep:44 epch:0.10 loss:0.947 grdn:0.000 lr:3.1e-06 updt_s:6.057 data_s:0.000 optim_s:0.000
+[2026-03-04 09:25:17] [rank: 0] [INFO] - step:200 smpl:3K ep:59 epch:0.13 loss:0.511 grdn:0.000 lr:4.4e-06 updt_s:6.057 data_s:0.000 optim_s:0.000
+[2026-03-04 09:30:20] [rank: 0] [INFO] - step:250 smpl:4K ep:74 epch:0.16 loss:0.443 grdn:0.000 lr:5.6e-06 updt_s:6.055 data_s:0.000 optim_s:0.000
+[2026-03-04 09:35:23] [rank: 0] [INFO] - step:300 smpl:5K ep:89 epch:0.19 loss:0.446 grdn:0.000 lr:6.9e-06 updt_s:6.058 data_s:0.000 optim_s:0.000
+[2026-03-04 09:40:26] [rank: 0] [INFO] - step:350 smpl:6K ep:103 epch:0.22 loss:0.386 grdn:0.000 lr:8.1e-06 updt_s:6.053 data_s:0.000 optim_s:0.000
+[2026-03-04 09:45:28] [rank: 0] [INFO] - step:400 smpl:6K ep:118 epch:0.25 loss:0.392 grdn:0.000 lr:9.4e-06 updt_s:6.049 data_s:0.000 optim_s:0.000
+[2026-03-04 09:50:31] [rank: 0] [INFO] - step:450 smpl:7K ep:133 epch:0.29 loss:0.394 grdn:0.000 lr:1.1e-05 updt_s:6.044 data_s:0.000 optim_s:0.000
+[2026-03-04 09:55:33] [rank: 0] [INFO] - step:500 smpl:8K ep:148 epch:0.32 loss:0.405 grdn:0.000 lr:1.2e-05 updt_s:6.048 data_s:0.000 optim_s:0.000
+[2026-03-04 10:00:35] [rank: 0] [INFO] - step:550 smpl:9K ep:162 epch:0.35 loss:0.377 grdn:0.000 lr:1.3e-05 updt_s:6.047 data_s:0.000 optim_s:0.000
+[2026-03-04 10:05:38] [rank: 0] [INFO] - step:600 smpl:10K ep:177 epch:0.38 loss:0.357 grdn:0.000 lr:1.4e-05 updt_s:6.047 data_s:0.000 optim_s:0.000
+[2026-03-04 10:10:40] [rank: 0] [INFO] - step:650 smpl:10K ep:192 epch:0.41 loss:0.344 grdn:0.000 lr:1.6e-05 updt_s:6.046 data_s:0.000 optim_s:0.000
+[2026-03-04 10:15:43] [rank: 0] [INFO] - step:700 smpl:11K ep:207 epch:0.44 loss:0.322 grdn:0.000 lr:1.7e-05 updt_s:6.048 data_s:0.000 optim_s:0.000
+[2026-03-04 10:20:45] [rank: 0] [INFO] - step:750 smpl:12K ep:222 epch:0.48 loss:0.366 grdn:0.000 lr:1.8e-05 updt_s:6.044 data_s:0.000 optim_s:0.000
+[2026-03-04 10:25:47] [rank: 0] [INFO] - step:800 smpl:13K ep:236 epch:0.51 loss:0.320 grdn:0.000 lr:1.9e-05 updt_s:6.048 data_s:0.000 optim_s:0.000
+[2026-03-04 10:30:50] [rank: 0] [INFO] - step:850 smpl:14K ep:251 epch:0.54 loss:0.355 grdn:0.000 lr:2.1e-05 updt_s:6.047 data_s:0.000 optim_s:0.000
+[2026-03-04 10:35:52] [rank: 0] [INFO] - step:900 smpl:14K ep:266 epch:0.57 loss:0.284 grdn:0.000 lr:2.2e-05 updt_s:6.045 data_s:0.000 optim_s:0.000
+[2026-03-04 10:40:54] [rank: 0] [INFO] - step:950 smpl:15K ep:281 epch:0.60 loss:0.357 grdn:0.000 lr:2.3e-05 updt_s:6.045 data_s:0.000 optim_s:0.000
+[2026-03-04 10:45:57] [rank: 0] [INFO] - step:1K smpl:16K ep:295 epch:0.63 loss:0.296 grdn:0.000 lr:2.4e-05 updt_s:6.047 data_s:0.000 optim_s:0.000
+[2026-03-04 10:50:59] [rank: 0] [INFO] - step:1K smpl:17K ep:310 epch:0.67 loss:0.253 grdn:0.000 lr:2.5e-05 updt_s:6.046 data_s:0.000 optim_s:0.000
+[2026-03-04 10:56:01] [rank: 0] [INFO] - step:1K smpl:18K ep:325 epch:0.70 loss:0.245 grdn:0.000 lr:2.5e-05 updt_s:6.044 data_s:0.000 optim_s:0.000
+[2026-03-04 11:01:03] [rank: 0] [INFO] - step:1K smpl:18K ep:340 epch:0.73 loss:0.275 grdn:0.000 lr:2.5e-05 updt_s:6.040 data_s:0.000 optim_s:0.000
+[2026-03-04 11:06:05] [rank: 0] [INFO] - step:1K smpl:19K ep:354 epch:0.76 loss:0.257 grdn:0.000 lr:2.5e-05 updt_s:6.044 data_s:0.000 optim_s:0.000
+[2026-03-04 11:11:08] [rank: 0] [INFO] - step:1K smpl:20K ep:369 epch:0.79 loss:0.217 grdn:0.000 lr:2.5e-05 updt_s:6.046 data_s:0.000 optim_s:0.000
+[2026-03-04 11:16:10] [rank: 0] [INFO] - step:1K smpl:21K ep:384 epch:0.82 loss:0.221 grdn:0.000 lr:2.5e-05 updt_s:6.042 data_s:0.000 optim_s:0.000
+[2026-03-04 11:21:12] [rank: 0] [INFO] - step:1K smpl:22K ep:399 epch:0.86 loss:0.225 grdn:0.000 lr:2.5e-05 updt_s:6.041 data_s:0.000 optim_s:0.000
+[2026-03-04 11:26:14] [rank: 0] [INFO] - step:1K smpl:22K ep:414 epch:0.89 loss:0.229 grdn:0.000 lr:2.5e-05 updt_s:6.043 data_s:0.000 optim_s:0.000
+[2026-03-04 11:31:16] [rank: 0] [INFO] - step:1K smpl:23K ep:428 epch:0.92 loss:0.208 grdn:0.000 lr:2.5e-05 updt_s:6.042 data_s:0.000 optim_s:0.000
+[2026-03-04 11:36:19] [rank: 0] [INFO] - step:2K smpl:24K ep:443 epch:0.95 loss:0.206 grdn:0.000 lr:2.5e-05 updt_s:6.047 data_s:0.000 optim_s:0.000
+[2026-03-04 11:41:21] [rank: 0] [INFO] - step:2K smpl:25K ep:458 epch:0.98 loss:0.242 grdn:0.000 lr:2.5e-05 updt_s:6.044 data_s:0.000 optim_s:0.000
+[2026-03-04 11:46:22] [rank: 0] [INFO] - step:2K smpl:26K ep:473 epch:1.01 loss:0.219 grdn:0.000 lr:2.5e-05 updt_s:6.005 data_s:0.016 optim_s:0.000
+[2026-03-04 11:51:24] [rank: 0] [INFO] - step:2K smpl:26K ep:487 epch:1.05 loss:0.206 grdn:0.000 lr:2.5e-05 updt_s:6.036 data_s:0.000 optim_s:0.000
+[2026-03-04 11:56:26] [rank: 0] [INFO] - step:2K smpl:27K ep:502 epch:1.08 loss:0.213 grdn:0.000 lr:2.5e-05 updt_s:6.038 data_s:0.000 optim_s:0.000
+[2026-03-04 12:01:28] [rank: 0] [INFO] - step:2K smpl:28K ep:517 epch:1.11 loss:0.224 grdn:0.000 lr:2.5e-05 updt_s:6.042 data_s:0.000 optim_s:0.000
+[2026-03-04 12:06:30] [rank: 0] [INFO] - step:2K smpl:29K ep:532 epch:1.14 loss:0.201 grdn:0.000 lr:2.5e-05 updt_s:6.043 data_s:0.000 optim_s:0.000
+[2026-03-04 12:11:32] [rank: 0] [INFO] - step:2K smpl:30K ep:546 epch:1.17 loss:0.198 grdn:0.000 lr:2.5e-05 updt_s:6.041 data_s:0.000 optim_s:0.000
+[2026-03-04 12:16:35] [rank: 0] [INFO] - step:2K smpl:30K ep:561 epch:1.20 loss:0.193 grdn:0.000 lr:2.5e-05 updt_s:6.045 data_s:0.000 optim_s:0.000
+[2026-03-04 12:21:37] [rank: 0] [INFO] - step:2K smpl:31K ep:576 epch:1.24 loss:0.204 grdn:0.000 lr:2.5e-05 updt_s:6.044 data_s:0.000 optim_s:0.000
+[2026-03-04 12:26:39] [rank: 0] [INFO] - step:2K smpl:32K ep:591 epch:1.27 loss:0.223 grdn:0.000 lr:2.5e-05 updt_s:6.042 data_s:0.000 optim_s:0.000
+[2026-03-04 12:31:41] [rank: 0] [INFO] - step:2K smpl:33K ep:606 epch:1.30 loss:0.204 grdn:0.000 lr:2.5e-05 updt_s:6.043 data_s:0.000 optim_s:0.000
+[2026-03-04 12:36:43] [rank: 0] [INFO] - step:2K smpl:34K ep:620 epch:1.33 loss:0.202 grdn:0.000 lr:2.5e-05 updt_s:6.044 data_s:0.000 optim_s:0.000
+[2026-03-04 12:41:45] [rank: 0] [INFO] - step:2K smpl:34K ep:635 epch:1.36 loss:0.196 grdn:0.000 lr:2.5e-05 updt_s:6.040 data_s:0.000 optim_s:0.000
+[2026-03-04 12:46:47] [rank: 0] [INFO] - step:2K smpl:35K ep:650 epch:1.39 loss:0.228 grdn:0.000 lr:2.5e-05 updt_s:6.041 data_s:0.000 optim_s:0.000
+[2026-03-04 12:51:50] [rank: 0] [INFO] - step:2K smpl:36K ep:665 epch:1.43 loss:0.194 grdn:0.000 lr:2.5e-05 updt_s:6.043 data_s:0.000 optim_s:0.000
+[2026-03-04 12:56:52] [rank: 0] [INFO] - step:2K smpl:37K ep:679 epch:1.46 loss:0.189 grdn:0.000 lr:2.5e-05 updt_s:6.042 data_s:0.000 optim_s:0.000
+[2026-03-04 13:01:54] [rank: 0] [INFO] - step:2K smpl:38K ep:694 epch:1.49 loss:0.198 grdn:0.000 lr:2.5e-05 updt_s:6.043 data_s:0.000 optim_s:0.000
+[2026-03-04 13:06:56] [rank: 0] [INFO] - step:2K smpl:38K ep:709 epch:1.52 loss:0.204 grdn:0.000 lr:2.5e-05 updt_s:6.046 data_s:0.000 optim_s:0.000
+[2026-03-04 13:11:58] [rank: 0] [INFO] - step:2K smpl:39K ep:724 epch:1.55 loss:0.184 grdn:0.000 lr:2.5e-05 updt_s:6.041 data_s:0.000 optim_s:0.000
+[2026-03-04 13:17:00] [rank: 0] [INFO] - Checkpoint policy after step 5000
+[2026-03-04 13:19:37] [rank: 0] [INFO] - Checkpoint policy after step 5000 completed.
+[2026-03-04 13:19:37] [rank: 0] [INFO] - step:2K smpl:40K ep:738 epch:1.58 loss:0.184 grdn:0.000 lr:2.5e-05 updt_s:6.041 data_s:0.000 optim_s:0.000
+[2026-03-04 13:24:37] [rank: 0] [INFO] - step:3K smpl:41K ep:753 epch:1.62 loss:0.193 grdn:0.000 lr:2.5e-05 updt_s:6.009 data_s:0.000 optim_s:0.000
+[2026-03-04 13:29:39] [rank: 0] [INFO] - step:3K smpl:42K ep:768 epch:1.65 loss:0.190 grdn:0.000 lr:2.5e-05 updt_s:6.040 data_s:0.000 optim_s:0.000
+[2026-03-04 13:34:42] [rank: 0] [INFO] - step:3K smpl:42K ep:783 epch:1.68 loss:0.169 grdn:0.000 lr:2.5e-05 updt_s:6.043 data_s:0.000 optim_s:0.000
+[2026-03-04 13:39:44] [rank: 0] [INFO] - step:3K smpl:43K ep:798 epch:1.71 loss:0.192 grdn:0.000 lr:2.5e-05 updt_s:6.042 data_s:0.000 optim_s:0.000
+[2026-03-04 13:44:46] [rank: 0] [INFO] - step:3K smpl:44K ep:812 epch:1.74 loss:0.189 grdn:0.000 lr:2.5e-05 updt_s:6.044 data_s:0.000 optim_s:0.000
+[2026-03-04 13:49:48] [rank: 0] [INFO] - step:3K smpl:45K ep:827 epch:1.77 loss:0.181 grdn:0.000 lr:2.5e-05 updt_s:6.042 data_s:0.000 optim_s:0.000
+[2026-03-04 13:54:50] [rank: 0] [INFO] - step:3K smpl:46K ep:842 epch:1.81 loss:0.188 grdn:0.000 lr:2.5e-05 updt_s:6.042 data_s:0.000 optim_s:0.000
+[2026-03-04 13:59:53] [rank: 0] [INFO] - step:3K smpl:46K ep:857 epch:1.84 loss:0.176 grdn:0.000 lr:2.4e-05 updt_s:6.045 data_s:0.000 optim_s:0.000
+[2026-03-04 14:04:55] [rank: 0] [INFO] - step:3K smpl:47K ep:871 epch:1.87 loss:0.174 grdn:0.000 lr:2.4e-05 updt_s:6.043 data_s:0.000 optim_s:0.000
+[2026-03-04 14:09:57] [rank: 0] [INFO] - step:3K smpl:48K ep:886 epch:1.90 loss:0.184 grdn:0.000 lr:2.4e-05 updt_s:6.042 data_s:0.000 optim_s:0.000
+[2026-03-04 14:14:59] [rank: 0] [INFO] - step:3K smpl:49K ep:901 epch:1.93 loss:0.179 grdn:0.000 lr:2.4e-05 updt_s:6.045 data_s:0.000 optim_s:0.000
+[2026-03-04 14:20:01] [rank: 0] [INFO] - step:3K smpl:50K ep:916 epch:1.97 loss:0.176 grdn:0.000 lr:2.4e-05 updt_s:6.042 data_s:0.000 optim_s:0.000
+[2026-03-04 14:25:03] [rank: 0] [INFO] - step:3K smpl:50K ep:930 epch:2.00 loss:0.177 grdn:0.000 lr:2.4e-05 updt_s:6.039 data_s:0.000 optim_s:0.000
+[2026-03-04 14:30:05] [rank: 0] [INFO] - step:3K smpl:51K ep:945 epch:2.03 loss:0.177 grdn:0.000 lr:2.4e-05 updt_s:6.007 data_s:0.016 optim_s:0.000
+[2026-03-04 14:35:07] [rank: 0] [INFO] - step:3K smpl:52K ep:960 epch:2.06 loss:0.174 grdn:0.000 lr:2.4e-05 updt_s:6.042 data_s:0.000 optim_s:0.000
+[2026-03-04 14:40:09] [rank: 0] [INFO] - step:3K smpl:53K ep:975 epch:2.09 loss:0.171 grdn:0.000 lr:2.4e-05 updt_s:6.043 data_s:0.000 optim_s:0.000
+[2026-03-04 14:45:11] [rank: 0] [INFO] - step:3K smpl:54K ep:990 epch:2.12 loss:0.185 grdn:0.000 lr:2.4e-05 updt_s:6.042 data_s:0.000 optim_s:0.000
+[2026-03-04 14:50:13] [rank: 0] [INFO] - step:3K smpl:54K ep:1K epch:2.16 loss:0.167 grdn:0.000 lr:2.4e-05 updt_s:6.041 data_s:0.000 optim_s:0.000
+[2026-03-04 14:55:15] [rank: 0] [INFO] - step:3K smpl:55K ep:1K epch:2.19 loss:0.173 grdn:0.000 lr:2.4e-05 updt_s:6.043 data_s:0.000 optim_s:0.000
+[2026-03-04 15:00:17] [rank: 0] [INFO] - step:4K smpl:56K ep:1K epch:2.22 loss:0.165 grdn:0.000 lr:2.4e-05 updt_s:6.042 data_s:0.000 optim_s:0.000
+[2026-03-04 15:05:20] [rank: 0] [INFO] - step:4K smpl:57K ep:1K epch:2.25 loss:0.168 grdn:0.000 lr:2.4e-05 updt_s:6.042 data_s:0.000 optim_s:0.000
+[2026-03-04 15:10:22] [rank: 0] [INFO] - step:4K smpl:58K ep:1K epch:2.28 loss:0.173 grdn:0.000 lr:2.4e-05 updt_s:6.043 data_s:0.000 optim_s:0.000
+[2026-03-04 15:15:24] [rank: 0] [INFO] - step:4K smpl:58K ep:1K epch:2.31 loss:0.167 grdn:0.000 lr:2.4e-05 updt_s:6.043 data_s:0.000 optim_s:0.000
+[2026-03-04 15:20:26] [rank: 0] [INFO] - step:4K smpl:59K ep:1K epch:2.35 loss:0.178 grdn:0.000 lr:2.4e-05 updt_s:6.042 data_s:0.000 optim_s:0.000
+[2026-03-04 15:25:28] [rank: 0] [INFO] - step:4K smpl:60K ep:1K epch:2.38 loss:0.175 grdn:0.000 lr:2.4e-05 updt_s:6.044 data_s:0.000 optim_s:0.000
+[2026-03-04 15:30:31] [rank: 0] [INFO] - step:4K smpl:61K ep:1K epch:2.41 loss:0.182 grdn:0.000 lr:2.4e-05 updt_s:6.042 data_s:0.000 optim_s:0.000
+[2026-03-04 15:35:33] [rank: 0] [INFO] - step:4K smpl:62K ep:1K epch:2.44 loss:0.168 grdn:0.000 lr:2.4e-05 updt_s:6.043 data_s:0.000 optim_s:0.000
+[2026-03-04 15:40:35] [rank: 0] [INFO] - step:4K smpl:62K ep:1K epch:2.47 loss:0.174 grdn:0.000 lr:2.4e-05 updt_s:6.044 data_s:0.000 optim_s:0.000
+[2026-03-04 15:45:37] [rank: 0] [INFO] - step:4K smpl:63K ep:1K epch:2.50 loss:0.171 grdn:0.000 lr:2.4e-05 updt_s:6.046 data_s:0.000 optim_s:0.000
+[2026-03-04 15:50:39] [rank: 0] [INFO] - step:4K smpl:64K ep:1K epch:2.54 loss:0.176 grdn:0.000 lr:2.4e-05 updt_s:6.042 data_s:0.000 optim_s:0.000
+[2026-03-04 15:55:42] [rank: 0] [INFO] - step:4K smpl:65K ep:1K epch:2.57 loss:0.166 grdn:0.000 lr:2.4e-05 updt_s:6.045 data_s:0.000 optim_s:0.000
+[2026-03-04 16:00:44] [rank: 0] [INFO] - step:4K smpl:66K ep:1K epch:2.60 loss:0.173 grdn:0.000 lr:2.4e-05 updt_s:6.043 data_s:0.000 optim_s:0.000
+[2026-03-04 16:05:47] [rank: 0] [INFO] - step:4K smpl:66K ep:1K epch:2.63 loss:0.166 grdn:0.000 lr:2.4e-05 updt_s:6.050 data_s:0.000 optim_s:0.000
+[2026-03-04 16:10:49] [rank: 0] [INFO] - step:4K smpl:67K ep:1K epch:2.66 loss:0.167 grdn:0.000 lr:2.4e-05 updt_s:6.050 data_s:0.000 optim_s:0.000
+[2026-03-04 16:15:51] [rank: 0] [INFO] - step:4K smpl:68K ep:1K epch:2.69 loss:0.165 grdn:0.000 lr:2.4e-05 updt_s:6.048 data_s:0.000 optim_s:0.000
+[2026-03-04 16:20:54] [rank: 0] [INFO] - step:4K smpl:69K ep:1K epch:2.73 loss:0.216 grdn:0.000 lr:2.4e-05 updt_s:6.049 data_s:0.000 optim_s:0.000
+[2026-03-04 16:25:56] [rank: 0] [INFO] - step:4K smpl:70K ep:1K epch:2.76 loss:0.162 grdn:0.000 lr:2.4e-05 updt_s:6.050 data_s:0.000 optim_s:0.000
+[2026-03-04 16:30:59] [rank: 0] [INFO] - step:4K smpl:70K ep:1K epch:2.79 loss:0.161 grdn:0.000 lr:2.4e-05 updt_s:6.049 data_s:0.000 optim_s:0.000
+[2026-03-04 16:36:02] [rank: 0] [INFO] - step:4K smpl:71K ep:1K epch:2.82 loss:0.171 grdn:0.000 lr:2.4e-05 updt_s:6.050 data_s:0.000 optim_s:0.000
+[2026-03-04 16:41:04] [rank: 0] [INFO] - step:4K smpl:72K ep:1K epch:2.85 loss:0.165 grdn:0.000 lr:2.4e-05 updt_s:6.054 data_s:0.000 optim_s:0.000
+[2026-03-04 16:46:07] [rank: 0] [INFO] - step:5K smpl:73K ep:1K epch:2.88 loss:0.163 grdn:0.000 lr:2.4e-05 updt_s:6.052 data_s:0.000 optim_s:0.000
+[2026-03-04 16:51:10] [rank: 0] [INFO] - step:5K smpl:74K ep:1K epch:2.92 loss:0.163 grdn:0.000 lr:2.4e-05 updt_s:6.054 data_s:0.000 optim_s:0.000
+[2026-03-04 16:56:12] [rank: 0] [INFO] - step:5K smpl:74K ep:1K epch:2.95 loss:0.158 grdn:0.000 lr:2.4e-05 updt_s:6.055 data_s:0.000 optim_s:0.000
+[2026-03-04 17:01:15] [rank: 0] [INFO] - step:5K smpl:75K ep:1K epch:2.98 loss:0.193 grdn:0.000 lr:2.4e-05 updt_s:6.055 data_s:0.000 optim_s:0.000
+[2026-03-04 17:06:17] [rank: 0] [INFO] - step:5K smpl:76K ep:1K epch:3.01 loss:0.173 grdn:0.000 lr:2.4e-05 updt_s:6.019 data_s:0.015 optim_s:0.000
+[2026-03-04 17:11:20] [rank: 0] [INFO] - step:5K smpl:77K ep:1K epch:3.04 loss:0.156 grdn:0.000 lr:2.4e-05 updt_s:6.057 data_s:0.000 optim_s:0.000
+[2026-03-04 17:16:23] [rank: 0] [INFO] - step:5K smpl:78K ep:1K epch:3.07 loss:0.172 grdn:0.000 lr:2.4e-05 updt_s:6.056 data_s:0.000 optim_s:0.000
+[2026-03-04 17:21:26] [rank: 0] [INFO] - step:5K smpl:78K ep:1K epch:3.11 loss:0.166 grdn:0.000 lr:2.4e-05 updt_s:6.058 data_s:0.000 optim_s:0.000
+[2026-03-04 17:26:29] [rank: 0] [INFO] - step:5K smpl:79K ep:1K epch:3.14 loss:0.167 grdn:0.000 lr:2.4e-05 updt_s:6.057 data_s:0.000 optim_s:0.000
+[2026-03-04 17:31:31] [rank: 0] [INFO] - Checkpoint policy after step 10000
+[2026-03-04 17:34:07] [rank: 0] [INFO] - Checkpoint policy after step 10000 completed.
+[2026-03-04 17:34:07] [rank: 0] [INFO] - step:5K smpl:80K ep:1K epch:3.17 loss:0.149 grdn:0.000 lr:2.4e-05 updt_s:6.056 data_s:0.000 optim_s:0.000
+[2026-03-04 17:39:08] [rank: 0] [INFO] - step:5K smpl:81K ep:1K epch:3.20 loss:0.189 grdn:0.000 lr:2.3e-05 updt_s:6.031 data_s:0.000 optim_s:0.000
+[2026-03-04 17:44:11] [rank: 0] [INFO] - step:5K smpl:82K ep:2K epch:3.23 loss:0.166 grdn:0.000 lr:2.3e-05 updt_s:6.056 data_s:0.000 optim_s:0.000
+[2026-03-04 17:49:14] [rank: 0] [INFO] - step:5K smpl:82K ep:2K epch:3.26 loss:0.148 grdn:0.000 lr:2.3e-05 updt_s:6.054 data_s:0.000 optim_s:0.000
+[2026-03-04 17:54:16] [rank: 0] [INFO] - step:5K smpl:83K ep:2K epch:3.30 loss:0.223 grdn:0.000 lr:2.3e-05 updt_s:6.054 data_s:0.000 optim_s:0.000
+[2026-03-04 17:59:19] [rank: 0] [INFO] - step:5K smpl:84K ep:2K epch:3.33 loss:0.161 grdn:0.000 lr:2.3e-05 updt_s:6.055 data_s:0.000 optim_s:0.000
+[2026-03-04 18:04:22] [rank: 0] [INFO] - step:5K smpl:85K ep:2K epch:3.36 loss:0.161 grdn:0.000 lr:2.3e-05 updt_s:6.054 data_s:0.000 optim_s:0.000
+[2026-03-04 18:09:25] [rank: 0] [INFO] - step:5K smpl:86K ep:2K epch:3.39 loss:0.170 grdn:0.000 lr:2.3e-05 updt_s:6.055 data_s:0.000 optim_s:0.000
+[2026-03-04 18:14:28] [rank: 0] [INFO] - step:5K smpl:86K ep:2K epch:3.42 loss:0.165 grdn:0.000 lr:2.3e-05 updt_s:6.060 data_s:0.000 optim_s:0.000
+[2026-03-04 18:19:31] [rank: 0] [INFO] - step:5K smpl:87K ep:2K epch:3.45 loss:0.160 grdn:0.000 lr:2.3e-05 updt_s:6.054 data_s:0.000 optim_s:0.000
+[2026-03-04 18:24:33] [rank: 0] [INFO] - step:6K smpl:88K ep:2K epch:3.49 loss:0.164 grdn:0.000 lr:2.3e-05 updt_s:6.056 data_s:0.000 optim_s:0.000
+[2026-03-04 18:29:36] [rank: 0] [INFO] - step:6K smpl:89K ep:2K epch:3.52 loss:0.169 grdn:0.000 lr:2.3e-05 updt_s:6.054 data_s:0.000 optim_s:0.000
+[2026-03-04 18:34:39] [rank: 0] [INFO] - step:6K smpl:90K ep:2K epch:3.55 loss:0.157 grdn:0.000 lr:2.3e-05 updt_s:6.058 data_s:0.000 optim_s:0.000
+[2026-03-04 18:39:42] [rank: 0] [INFO] - step:6K smpl:90K ep:2K epch:3.58 loss:0.163 grdn:0.000 lr:2.3e-05 updt_s:6.055 data_s:0.000 optim_s:0.000
+[2026-03-04 18:44:45] [rank: 0] [INFO] - step:6K smpl:91K ep:2K epch:3.61 loss:0.181 grdn:0.000 lr:2.3e-05 updt_s:6.057 data_s:0.000 optim_s:0.000
+[2026-03-04 18:49:48] [rank: 0] [INFO] - step:6K smpl:92K ep:2K epch:3.64 loss:0.167 grdn:0.000 lr:2.3e-05 updt_s:6.056 data_s:0.000 optim_s:0.000
+[2026-03-04 18:54:51] [rank: 0] [INFO] - step:6K smpl:93K ep:2K epch:3.68 loss:0.150 grdn:0.000 lr:2.3e-05 updt_s:6.058 data_s:0.000 optim_s:0.000
+[2026-03-04 18:59:54] [rank: 0] [INFO] - step:6K smpl:94K ep:2K epch:3.71 loss:0.169 grdn:0.000 lr:2.3e-05 updt_s:6.057 data_s:0.000 optim_s:0.000
+[2026-03-04 19:04:57] [rank: 0] [INFO] - step:6K smpl:94K ep:2K epch:3.74 loss:0.164 grdn:0.000 lr:2.3e-05 updt_s:6.059 data_s:0.000 optim_s:0.000
+[2026-03-04 19:10:00] [rank: 0] [INFO] - step:6K smpl:95K ep:2K epch:3.77 loss:0.156 grdn:0.000 lr:2.3e-05 updt_s:6.059 data_s:0.000 optim_s:0.000
+[2026-03-04 19:15:03] [rank: 0] [INFO] - step:6K smpl:96K ep:2K epch:3.80 loss:0.158 grdn:0.000 lr:2.3e-05 updt_s:6.059 data_s:0.000 optim_s:0.000
+[2026-03-04 19:20:05] [rank: 0] [INFO] - step:6K smpl:97K ep:2K epch:3.84 loss:0.152 grdn:0.000 lr:2.3e-05 updt_s:6.057 data_s:0.000 optim_s:0.000
+[2026-03-04 19:25:08] [rank: 0] [INFO] - step:6K smpl:98K ep:2K epch:3.87 loss:0.149 grdn:0.000 lr:2.3e-05 updt_s:6.055 data_s:0.000 optim_s:0.000
+[2026-03-04 19:30:11] [rank: 0] [INFO] - step:6K smpl:98K ep:2K epch:3.90 loss:0.150 grdn:0.000 lr:2.3e-05 updt_s:6.057 data_s:0.000 optim_s:0.000
+[2026-03-04 19:35:14] [rank: 0] [INFO] - step:6K smpl:99K ep:2K epch:3.93 loss:0.148 grdn:0.000 lr:2.3e-05 updt_s:6.057 data_s:0.000 optim_s:0.000
+[2026-03-04 19:40:17] [rank: 0] [INFO] - step:6K smpl:100K ep:2K epch:3.96 loss:0.159 grdn:0.000 lr:2.3e-05 updt_s:6.054 data_s:0.000 optim_s:0.000
+[2026-03-04 19:45:20] [rank: 0] [INFO] - step:6K smpl:101K ep:2K epch:3.99 loss:0.154 grdn:0.000 lr:2.3e-05 updt_s:6.058 data_s:0.000 optim_s:0.000
+[2026-03-04 19:50:22] [rank: 0] [INFO] - step:6K smpl:102K ep:2K epch:4.03 loss:0.151 grdn:0.000 lr:2.3e-05 updt_s:6.025 data_s:0.016 optim_s:0.000
+[2026-03-04 19:55:25] [rank: 0] [INFO] - step:6K smpl:102K ep:2K epch:4.06 loss:0.158 grdn:0.000 lr:2.3e-05 updt_s:6.064 data_s:0.000 optim_s:0.000
+[2026-03-04 20:00:28] [rank: 0] [INFO] - step:6K smpl:103K ep:2K epch:4.09 loss:0.151 grdn:0.000 lr:2.3e-05 updt_s:6.064 data_s:0.000 optim_s:0.000
+[2026-03-04 20:05:32] [rank: 0] [INFO] - step:6K smpl:104K ep:2K epch:4.12 loss:0.182 grdn:0.000 lr:2.3e-05 updt_s:6.067 data_s:0.000 optim_s:0.000
+[2026-03-04 20:10:35] [rank: 0] [INFO] - step:7K smpl:105K ep:2K epch:4.15 loss:0.152 grdn:0.000 lr:2.2e-05 updt_s:6.062 data_s:0.000 optim_s:0.000
+[2026-03-04 20:15:38] [rank: 0] [INFO] - step:7K smpl:106K ep:2K epch:4.18 loss:0.145 grdn:0.000 lr:2.2e-05 updt_s:6.061 data_s:0.000 optim_s:0.000
+[2026-03-04 20:20:41] [rank: 0] [INFO] - step:7K smpl:106K ep:2K epch:4.22 loss:0.147 grdn:0.000 lr:2.2e-05 updt_s:6.065 data_s:0.000 optim_s:0.000
+[2026-03-04 20:25:44] [rank: 0] [INFO] - step:7K smpl:107K ep:2K epch:4.25 loss:0.161 grdn:0.000 lr:2.2e-05 updt_s:6.064 data_s:0.000 optim_s:0.000
+[2026-03-04 20:30:48] [rank: 0] [INFO] - step:7K smpl:108K ep:2K epch:4.28 loss:0.145 grdn:0.000 lr:2.2e-05 updt_s:6.066 data_s:0.000 optim_s:0.000
+[2026-03-04 20:35:51] [rank: 0] [INFO] - step:7K smpl:109K ep:2K epch:4.31 loss:0.153 grdn:0.000 lr:2.2e-05 updt_s:6.071 data_s:0.000 optim_s:0.000
+[2026-03-04 20:40:55] [rank: 0] [INFO] - step:7K smpl:110K ep:2K epch:4.34 loss:0.159 grdn:0.000 lr:2.2e-05 updt_s:6.063 data_s:0.000 optim_s:0.000
+[2026-03-04 20:45:58] [rank: 0] [INFO] - step:7K smpl:110K ep:2K epch:4.37 loss:0.155 grdn:0.000 lr:2.2e-05 updt_s:6.062 data_s:0.000 optim_s:0.000
+[2026-03-04 20:51:01] [rank: 0] [INFO] - step:7K smpl:111K ep:2K epch:4.41 loss:0.166 grdn:0.000 lr:2.2e-05 updt_s:6.063 data_s:0.000 optim_s:0.000
+[2026-03-04 20:56:04] [rank: 0] [INFO] - step:7K smpl:112K ep:2K epch:4.44 loss:0.147 grdn:0.000 lr:2.2e-05 updt_s:6.067 data_s:0.000 optim_s:0.000
+[2026-03-04 21:01:08] [rank: 0] [INFO] - step:7K smpl:113K ep:2K epch:4.47 loss:0.153 grdn:0.000 lr:2.2e-05 updt_s:6.063 data_s:0.000 optim_s:0.000
+[2026-03-04 21:06:11] [rank: 0] [INFO] - step:7K smpl:114K ep:2K epch:4.50 loss:0.156 grdn:0.000 lr:2.2e-05 updt_s:6.070 data_s:0.000 optim_s:0.000
+[2026-03-04 21:11:14] [rank: 0] [INFO] - step:7K smpl:114K ep:2K epch:4.53 loss:0.165 grdn:0.000 lr:2.2e-05 updt_s:6.064 data_s:0.000 optim_s:0.000
+[2026-03-04 21:16:18] [rank: 0] [INFO] - step:7K smpl:115K ep:2K epch:4.56 loss:0.151 grdn:0.000 lr:2.2e-05 updt_s:6.065 data_s:0.000 optim_s:0.000
+[2026-03-04 21:21:21] [rank: 0] [INFO] - step:7K smpl:116K ep:2K epch:4.60 loss:0.175 grdn:0.000 lr:2.2e-05 updt_s:6.066 data_s:0.000 optim_s:0.000
+[2026-03-04 21:26:24] [rank: 0] [INFO] - step:7K smpl:117K ep:2K epch:4.63 loss:0.159 grdn:0.000 lr:2.2e-05 updt_s:6.065 data_s:0.000 optim_s:0.000
+[2026-03-04 21:31:27] [rank: 0] [INFO] - step:7K smpl:118K ep:2K epch:4.66 loss:0.145 grdn:0.000 lr:2.2e-05 updt_s:6.062 data_s:0.000 optim_s:0.000
+[2026-03-04 21:36:31] [rank: 0] [INFO] - step:7K smpl:118K ep:2K epch:4.69 loss:0.151 grdn:0.000 lr:2.2e-05 updt_s:6.069 data_s:0.000 optim_s:0.000
+[2026-03-04 21:41:34] [rank: 0] [INFO] - step:7K smpl:119K ep:2K epch:4.72 loss:0.157 grdn:0.000 lr:2.2e-05 updt_s:6.062 data_s:0.000 optim_s:0.000
+[2026-03-04 21:46:37] [rank: 0] [INFO] - Checkpoint policy after step 15000
+[2026-03-04 21:49:14] [rank: 0] [INFO] - Checkpoint policy after step 15000 completed.
+[2026-03-04 21:49:14] [rank: 0] [INFO] - step:8K smpl:120K ep:2K epch:4.75 loss:0.145 grdn:0.000 lr:2.2e-05 updt_s:6.065 data_s:0.000 optim_s:0.000
+[2026-03-04 21:54:16] [rank: 0] [INFO] - step:8K smpl:121K ep:2K epch:4.79 loss:0.144 grdn:0.000 lr:2.2e-05 updt_s:6.048 data_s:0.000 optim_s:0.000
+[2026-03-04 21:59:19] [rank: 0] [INFO] - step:8K smpl:122K ep:2K epch:4.82 loss:0.152 grdn:0.000 lr:2.2e-05 updt_s:6.061 data_s:0.000 optim_s:0.000
+[2026-03-04 22:04:23] [rank: 0] [INFO] - step:8K smpl:122K ep:2K epch:4.85 loss:0.152 grdn:0.000 lr:2.2e-05 updt_s:6.065 data_s:0.000 optim_s:0.000
+[2026-03-04 22:09:26] [rank: 0] [INFO] - step:8K smpl:123K ep:2K epch:4.88 loss:0.142 grdn:0.000 lr:2.2e-05 updt_s:6.066 data_s:0.000 optim_s:0.000
+[2026-03-04 22:14:30] [rank: 0] [INFO] - step:8K smpl:124K ep:2K epch:4.91 loss:0.152 grdn:0.000 lr:2.2e-05 updt_s:6.070 data_s:0.000 optim_s:0.000
+[2026-03-04 22:19:33] [rank: 0] [INFO] - step:8K smpl:125K ep:2K epch:4.94 loss:0.148 grdn:0.000 lr:2.1e-05 updt_s:6.066 data_s:0.000 optim_s:0.000
+[2026-03-04 22:24:36] [rank: 0] [INFO] - step:8K smpl:126K ep:2K epch:4.98 loss:0.146 grdn:0.000 lr:2.1e-05 updt_s:6.065 data_s:0.000 optim_s:0.000
+[2026-03-04 22:29:39] [rank: 0] [INFO] - step:8K smpl:126K ep:2K epch:5.01 loss:0.149 grdn:0.000 lr:2.1e-05 updt_s:6.030 data_s:0.015 optim_s:0.000
+[2026-03-04 22:34:42] [rank: 0] [INFO] - step:8K smpl:127K ep:2K epch:5.04 loss:0.154 grdn:0.000 lr:2.1e-05 updt_s:6.063 data_s:0.000 optim_s:0.000
+[2026-03-04 22:39:45] [rank: 0] [INFO] - step:8K smpl:128K ep:2K epch:5.07 loss:0.145 grdn:0.000 lr:2.1e-05 updt_s:6.065 data_s:0.000 optim_s:0.000
+[2026-03-04 22:44:48] [rank: 0] [INFO] - step:8K smpl:129K ep:2K epch:5.10 loss:0.149 grdn:0.000 lr:2.1e-05 updt_s:6.065 data_s:0.000 optim_s:0.000
+[2026-03-04 22:49:52] [rank: 0] [INFO] - step:8K smpl:130K ep:2K epch:5.13 loss:0.157 grdn:0.000 lr:2.1e-05 updt_s:6.064 data_s:0.000 optim_s:0.000
+[2026-03-04 22:54:55] [rank: 0] [INFO] - step:8K smpl:130K ep:2K epch:5.17 loss:0.142 grdn:0.000 lr:2.1e-05 updt_s:6.064 data_s:0.000 optim_s:0.000
+[2026-03-04 22:59:58] [rank: 0] [INFO] - step:8K smpl:131K ep:2K epch:5.20 loss:0.144 grdn:0.000 lr:2.1e-05 updt_s:6.063 data_s:0.000 optim_s:0.000
+[2026-03-04 23:05:01] [rank: 0] [INFO] - step:8K smpl:132K ep:2K epch:5.23 loss:0.149 grdn:0.000 lr:2.1e-05 updt_s:6.066 data_s:0.000 optim_s:0.000
+[2026-03-04 23:10:05] [rank: 0] [INFO] - step:8K smpl:133K ep:2K epch:5.26 loss:0.140 grdn:0.000 lr:2.1e-05 updt_s:6.065 data_s:0.000 optim_s:0.000
+[2026-03-04 23:15:08] [rank: 0] [INFO] - step:8K smpl:134K ep:2K epch:5.29 loss:0.148 grdn:0.000 lr:2.1e-05 updt_s:6.069 data_s:0.000 optim_s:0.000
+[2026-03-04 23:20:12] [rank: 0] [INFO] - step:8K smpl:134K ep:2K epch:5.32 loss:0.147 grdn:0.000 lr:2.1e-05 updt_s:6.065 data_s:0.000 optim_s:0.000
+[2026-03-04 23:25:15] [rank: 0] [INFO] - step:8K smpl:135K ep:2K epch:5.36 loss:0.158 grdn:0.000 lr:2.1e-05 updt_s:6.064 data_s:0.000 optim_s:0.000
+[2026-03-04 23:30:18] [rank: 0] [INFO] - step:8K smpl:136K ep:3K epch:5.39 loss:0.190 grdn:0.000 lr:2.1e-05 updt_s:6.064 data_s:0.000 optim_s:0.000
+[2026-03-04 23:35:21] [rank: 0] [INFO] - step:9K smpl:137K ep:3K epch:5.42 loss:0.142 grdn:0.000 lr:2.1e-05 updt_s:6.067 data_s:0.000 optim_s:0.000
+[2026-03-04 23:40:25] [rank: 0] [INFO] - step:9K smpl:138K ep:3K epch:5.45 loss:0.155 grdn:0.000 lr:2.1e-05 updt_s:6.064 data_s:0.000 optim_s:0.000
+[2026-03-04 23:45:28] [rank: 0] [INFO] - step:9K smpl:138K ep:3K epch:5.48 loss:0.167 grdn:0.000 lr:2.1e-05 updt_s:6.065 data_s:0.000 optim_s:0.000
+[2026-03-04 23:50:31] [rank: 0] [INFO] - step:9K smpl:139K ep:3K epch:5.51 loss:0.154 grdn:0.000 lr:2.1e-05 updt_s:6.062 data_s:0.000 optim_s:0.000
+[2026-03-04 23:55:34] [rank: 0] [INFO] - step:9K smpl:140K ep:3K epch:5.55 loss:0.145 grdn:0.000 lr:2.1e-05 updt_s:6.065 data_s:0.000 optim_s:0.000
+[2026-03-05 00:00:38] [rank: 0] [INFO] - step:9K smpl:141K ep:3K epch:5.58 loss:0.143 grdn:0.000 lr:2.1e-05 updt_s:6.064 data_s:0.000 optim_s:0.000
+[2026-03-05 00:05:41] [rank: 0] [INFO] - step:9K smpl:142K ep:3K epch:5.61 loss:0.191 grdn:0.000 lr:2.1e-05 updt_s:6.064 data_s:0.000 optim_s:0.000
+[2026-03-05 00:10:44] [rank: 0] [INFO] - step:9K smpl:142K ep:3K epch:5.64 loss:0.142 grdn:0.000 lr:2.0e-05 updt_s:6.063 data_s:0.000 optim_s:0.000
+[2026-03-05 00:15:47] [rank: 0] [INFO] - step:9K smpl:143K ep:3K epch:5.67 loss:0.142 grdn:0.000 lr:2.0e-05 updt_s:6.065 data_s:0.000 optim_s:0.000
+[2026-03-05 00:20:50] [rank: 0] [INFO] - step:9K smpl:144K ep:3K epch:5.71 loss:0.155 grdn:0.000 lr:2.0e-05 updt_s:6.058 data_s:0.000 optim_s:0.000
+[2026-03-05 00:25:53] [rank: 0] [INFO] - step:9K smpl:145K ep:3K epch:5.74 loss:0.152 grdn:0.000 lr:2.0e-05 updt_s:6.056 data_s:0.000 optim_s:0.000
+[2026-03-05 00:30:56] [rank: 0] [INFO] - step:9K smpl:146K ep:3K epch:5.77 loss:0.146 grdn:0.000 lr:2.0e-05 updt_s:6.061 data_s:0.000 optim_s:0.000
+[2026-03-05 00:35:59] [rank: 0] [INFO] - step:9K smpl:146K ep:3K epch:5.80 loss:0.143 grdn:0.000 lr:2.0e-05 updt_s:6.060 data_s:0.000 optim_s:0.000
+[2026-03-05 00:41:02] [rank: 0] [INFO] - step:9K smpl:147K ep:3K epch:5.83 loss:0.140 grdn:0.000 lr:2.0e-05 updt_s:6.061 data_s:0.000 optim_s:0.000
+[2026-03-05 00:46:05] [rank: 0] [INFO] - step:9K smpl:148K ep:3K epch:5.86 loss:0.141 grdn:0.000 lr:2.0e-05 updt_s:6.057 data_s:0.000 optim_s:0.000
+[2026-03-05 00:51:08] [rank: 0] [INFO] - step:9K smpl:149K ep:3K epch:5.90 loss:0.136 grdn:0.000 lr:2.0e-05 updt_s:6.058 data_s:0.000 optim_s:0.000
+[2026-03-05 00:56:11] [rank: 0] [INFO] - step:9K smpl:150K ep:3K epch:5.93 loss:0.144 grdn:0.000 lr:2.0e-05 updt_s:6.058 data_s:0.000 optim_s:0.000
+[2026-03-05 01:01:14] [rank: 0] [INFO] - step:9K smpl:150K ep:3K epch:5.96 loss:0.144 grdn:0.000 lr:2.0e-05 updt_s:6.063 data_s:0.000 optim_s:0.000
+[2026-03-05 01:06:18] [rank: 0] [INFO] - step:9K smpl:151K ep:3K epch:5.99 loss:0.140 grdn:0.000 lr:2.0e-05 updt_s:6.061 data_s:0.000 optim_s:0.000
+[2026-03-05 01:11:20] [rank: 0] [INFO] - step:10K smpl:152K ep:3K epch:6.02 loss:0.150 grdn:0.000 lr:2.0e-05 updt_s:6.025 data_s:0.016 optim_s:0.000
+[2026-03-05 01:16:23] [rank: 0] [INFO] - step:10K smpl:153K ep:3K epch:6.05 loss:0.140 grdn:0.000 lr:2.0e-05 updt_s:6.065 data_s:0.000 optim_s:0.000
+[2026-03-05 01:21:26] [rank: 0] [INFO] - step:10K smpl:154K ep:3K epch:6.09 loss:0.141 grdn:0.000 lr:2.0e-05 updt_s:6.064 data_s:0.000 optim_s:0.000
+[2026-03-05 01:26:29] [rank: 0] [INFO] - step:10K smpl:154K ep:3K epch:6.12 loss:0.164 grdn:0.000 lr:2.0e-05 updt_s:6.062 data_s:0.000 optim_s:0.000
+[2026-03-05 01:31:32] [rank: 0] [INFO] - step:10K smpl:155K ep:3K epch:6.15 loss:0.139 grdn:0.000 lr:2.0e-05 updt_s:6.063 data_s:0.000 optim_s:0.000
+[2026-03-05 01:36:35] [rank: 0] [INFO] - step:10K smpl:156K ep:3K epch:6.18 loss:0.133 grdn:0.000 lr:2.0e-05 updt_s:6.059 data_s:0.000 optim_s:0.000
+[2026-03-05 01:41:39] [rank: 0] [INFO] - step:10K smpl:157K ep:3K epch:6.21 loss:0.140 grdn:0.000 lr:2.0e-05 updt_s:6.065 data_s:0.000 optim_s:0.000
+[2026-03-05 01:46:42] [rank: 0] [INFO] - step:10K smpl:158K ep:3K epch:6.24 loss:0.140 grdn:0.000 lr:2.0e-05 updt_s:6.064 data_s:0.000 optim_s:0.000
+[2026-03-05 01:51:45] [rank: 0] [INFO] - step:10K smpl:158K ep:3K epch:6.28 loss:0.131 grdn:0.000 lr:2.0e-05 updt_s:6.061 data_s:0.000 optim_s:0.000
+[2026-03-05 01:56:48] [rank: 0] [INFO] - step:10K smpl:159K ep:3K epch:6.31 loss:0.142 grdn:0.000 lr:1.9e-05 updt_s:6.062 data_s:0.000 optim_s:0.000
+[2026-03-05 02:01:52] [rank: 0] [INFO] - Checkpoint policy after step 20000
+[2026-03-05 02:04:24] [rank: 0] [INFO] - Checkpoint policy after step 20000 completed.
+[2026-03-05 02:04:24] [rank: 0] [INFO] - step:10K smpl:160K ep:3K epch:6.34 loss:0.142 grdn:0.000 lr:1.9e-05 updt_s:6.064 data_s:0.000 optim_s:0.000
+[2026-03-05 02:09:27] [rank: 0] [INFO] - step:10K smpl:161K ep:3K epch:6.37 loss:0.148 grdn:0.000 lr:1.9e-05 updt_s:6.043 data_s:0.001 optim_s:0.000
+[2026-03-05 02:14:30] [rank: 0] [INFO] - step:10K smpl:162K ep:3K epch:6.40 loss:0.149 grdn:0.000 lr:1.9e-05 updt_s:6.061 data_s:0.000 optim_s:0.000
+[2026-03-05 02:19:33] [rank: 0] [INFO] - step:10K smpl:162K ep:3K epch:6.43 loss:0.139 grdn:0.000 lr:1.9e-05 updt_s:6.062 data_s:0.000 optim_s:0.000
+[2026-03-05 02:24:36] [rank: 0] [INFO] - step:10K smpl:163K ep:3K epch:6.47 loss:0.141 grdn:0.000 lr:1.9e-05 updt_s:6.066 data_s:0.000 optim_s:0.000
+[2026-03-05 02:29:39] [rank: 0] [INFO] - step:10K smpl:164K ep:3K epch:6.50 loss:0.141 grdn:0.000 lr:1.9e-05 updt_s:6.062 data_s:0.000 optim_s:0.000
+[2026-03-05 02:34:42] [rank: 0] [INFO] - step:10K smpl:165K ep:3K epch:6.53 loss:0.141 grdn:0.000 lr:1.9e-05 updt_s:6.063 data_s:0.000 optim_s:0.000
+[2026-03-05 02:39:46] [rank: 0] [INFO] - step:10K smpl:166K ep:3K epch:6.56 loss:0.136 grdn:0.000 lr:1.9e-05 updt_s:6.066 data_s:0.000 optim_s:0.000
+[2026-03-05 02:44:49] [rank: 0] [INFO] - step:10K smpl:166K ep:3K epch:6.59 loss:0.150 grdn:0.000 lr:1.9e-05 updt_s:6.065 data_s:0.000 optim_s:0.000
+[2026-03-05 02:49:52] [rank: 0] [INFO] - step:10K smpl:167K ep:3K epch:6.62 loss:0.141 grdn:0.000 lr:1.9e-05 updt_s:6.060 data_s:0.000 optim_s:0.000
+[2026-03-05 02:54:55] [rank: 0] [INFO] - step:10K smpl:168K ep:3K epch:6.66 loss:0.146 grdn:0.000 lr:1.9e-05 updt_s:6.060 data_s:0.000 optim_s:0.000
+[2026-03-05 02:59:58] [rank: 0] [INFO] - step:11K smpl:169K ep:3K epch:6.69 loss:0.132 grdn:0.000 lr:1.9e-05 updt_s:6.060 data_s:0.000 optim_s:0.000
+[2026-03-05 03:05:01] [rank: 0] [INFO] - step:11K smpl:170K ep:3K epch:6.72 loss:0.145 grdn:0.000 lr:1.9e-05 updt_s:6.060 data_s:0.000 optim_s:0.000
+[2026-03-05 03:10:05] [rank: 0] [INFO] - step:11K smpl:170K ep:3K epch:6.75 loss:0.165 grdn:0.000 lr:1.9e-05 updt_s:6.067 data_s:0.000 optim_s:0.000
+[2026-03-05 03:15:08] [rank: 0] [INFO] - step:11K smpl:171K ep:3K epch:6.78 loss:0.134 grdn:0.000 lr:1.9e-05 updt_s:6.060 data_s:0.000 optim_s:0.000
+[2026-03-05 03:20:11] [rank: 0] [INFO] - step:11K smpl:172K ep:3K epch:6.81 loss:0.138 grdn:0.000 lr:1.9e-05 updt_s:6.059 data_s:0.000 optim_s:0.000
+[2026-03-05 03:25:14] [rank: 0] [INFO] - step:11K smpl:173K ep:3K epch:6.85 loss:0.136 grdn:0.000 lr:1.9e-05 updt_s:6.061 data_s:0.000 optim_s:0.000
+[2026-03-05 03:30:17] [rank: 0] [INFO] - step:11K smpl:174K ep:3K epch:6.88 loss:0.127 grdn:0.000 lr:1.9e-05 updt_s:6.061 data_s:0.000 optim_s:0.000
+[2026-03-05 03:35:20] [rank: 0] [INFO] - step:11K smpl:174K ep:3K epch:6.91 loss:0.127 grdn:0.000 lr:1.8e-05 updt_s:6.062 data_s:0.000 optim_s:0.000
+[2026-03-05 03:40:23] [rank: 0] [INFO] - step:11K smpl:175K ep:3K epch:6.94 loss:0.134 grdn:0.000 lr:1.8e-05 updt_s:6.064 data_s:0.000 optim_s:0.000
+[2026-03-05 03:45:26] [rank: 0] [INFO] - step:11K smpl:176K ep:3K epch:6.97 loss:0.143 grdn:0.000 lr:1.8e-05 updt_s:6.061 data_s:0.000 optim_s:0.000
+[2026-03-05 03:50:28] [rank: 0] [INFO] - step:11K smpl:177K ep:3K epch:7.00 loss:0.141 grdn:0.000 lr:1.8e-05 updt_s:6.024 data_s:0.016 optim_s:0.000
+[2026-03-05 03:55:32] [rank: 0] [INFO] - step:11K smpl:178K ep:3K epch:7.04 loss:0.146 grdn:0.000 lr:1.8e-05 updt_s:6.063 data_s:0.000 optim_s:0.000
+[2026-03-05 04:00:35] [rank: 0] [INFO] - step:11K smpl:178K ep:3K epch:7.07 loss:0.139 grdn:0.000 lr:1.8e-05 updt_s:6.062 data_s:0.000 optim_s:0.000
+[2026-03-05 04:05:38] [rank: 0] [INFO] - step:11K smpl:179K ep:3K epch:7.10 loss:0.139 grdn:0.000 lr:1.8e-05 updt_s:6.063 data_s:0.000 optim_s:0.000
+[2026-03-05 04:10:41] [rank: 0] [INFO] - step:11K smpl:180K ep:3K epch:7.13 loss:0.144 grdn:0.000 lr:1.8e-05 updt_s:6.062 data_s:0.000 optim_s:0.000
+[2026-03-05 04:15:44] [rank: 0] [INFO] - step:11K smpl:181K ep:3K epch:7.16 loss:0.130 grdn:0.000 lr:1.8e-05 updt_s:6.059 data_s:0.000 optim_s:0.000
+[2026-03-05 04:20:47] [rank: 0] [INFO] - step:11K smpl:182K ep:3K epch:7.19 loss:0.128 grdn:0.000 lr:1.8e-05 updt_s:6.060 data_s:0.000 optim_s:0.000
+[2026-03-05 04:25:50] [rank: 0] [INFO] - step:11K smpl:182K ep:3K epch:7.23 loss:0.131 grdn:0.000 lr:1.8e-05 updt_s:6.058 data_s:0.000 optim_s:0.000
+[2026-03-05 04:30:53] [rank: 0] [INFO] - step:11K smpl:183K ep:3K epch:7.26 loss:0.132 grdn:0.000 lr:1.8e-05 updt_s:6.059 data_s:0.000 optim_s:0.000
+[2026-03-05 04:35:56] [rank: 0] [INFO] - step:12K smpl:184K ep:3K epch:7.29 loss:0.136 grdn:0.000 lr:1.8e-05 updt_s:6.061 data_s:0.000 optim_s:0.000
+[2026-03-05 04:40:59] [rank: 0] [INFO] - step:12K smpl:185K ep:3K epch:7.32 loss:0.139 grdn:0.000 lr:1.8e-05 updt_s:6.060 data_s:0.000 optim_s:0.000
+[2026-03-05 04:46:02] [rank: 0] [INFO] - step:12K smpl:186K ep:3K epch:7.35 loss:0.136 grdn:0.000 lr:1.8e-05 updt_s:6.062 data_s:0.000 optim_s:0.000
+[2026-03-05 04:51:05] [rank: 0] [INFO] - step:12K smpl:186K ep:3K epch:7.38 loss:0.169 grdn:0.000 lr:1.8e-05 updt_s:6.061 data_s:0.000 optim_s:0.000
+[2026-03-05 04:56:08] [rank: 0] [INFO] - step:12K smpl:187K ep:3K epch:7.42 loss:0.135 grdn:0.000 lr:1.8e-05 updt_s:6.059 data_s:0.000 optim_s:0.000
+[2026-03-05 05:01:11] [rank: 0] [INFO] - step:12K smpl:188K ep:3K epch:7.45 loss:0.142 grdn:0.000 lr:1.8e-05 updt_s:6.060 data_s:0.000 optim_s:0.000
+[2026-03-05 05:06:15] [rank: 0] [INFO] - step:12K smpl:189K ep:3K epch:7.48 loss:0.136 grdn:0.000 lr:1.7e-05 updt_s:6.063 data_s:0.000 optim_s:0.000
+[2026-03-05 05:11:18] [rank: 0] [INFO] - step:12K smpl:190K ep:4K epch:7.51 loss:0.135 grdn:0.000 lr:1.7e-05 updt_s:6.063 data_s:0.000 optim_s:0.000
+[2026-03-05 05:16:21] [rank: 0] [INFO] - step:12K smpl:190K ep:4K epch:7.54 loss:0.137 grdn:0.000 lr:1.7e-05 updt_s:6.060 data_s:0.000 optim_s:0.000
+[2026-03-05 05:21:24] [rank: 0] [INFO] - step:12K smpl:191K ep:4K epch:7.57 loss:0.134 grdn:0.000 lr:1.7e-05 updt_s:6.062 data_s:0.000 optim_s:0.000
+[2026-03-05 05:26:27] [rank: 0] [INFO] - step:12K smpl:192K ep:4K epch:7.61 loss:0.150 grdn:0.000 lr:1.7e-05 updt_s:6.059 data_s:0.000 optim_s:0.000
+[2026-03-05 05:31:30] [rank: 0] [INFO] - step:12K smpl:193K ep:4K epch:7.64 loss:0.136 grdn:0.000 lr:1.7e-05 updt_s:6.055 data_s:0.000 optim_s:0.000
+[2026-03-05 05:36:33] [rank: 0] [INFO] - step:12K smpl:194K ep:4K epch:7.67 loss:0.134 grdn:0.000 lr:1.7e-05 updt_s:6.055 data_s:0.000 optim_s:0.000
+[2026-03-05 05:41:35] [rank: 0] [INFO] - step:12K smpl:194K ep:4K epch:7.70 loss:0.135 grdn:0.000 lr:1.7e-05 updt_s:6.054 data_s:0.000 optim_s:0.000
+[2026-03-05 05:46:38] [rank: 0] [INFO] - step:12K smpl:195K ep:4K epch:7.73 loss:0.136 grdn:0.000 lr:1.7e-05 updt_s:6.061 data_s:0.000 optim_s:0.000
+[2026-03-05 05:51:41] [rank: 0] [INFO] - step:12K smpl:196K ep:4K epch:7.77 loss:0.138 grdn:0.000 lr:1.7e-05 updt_s:6.056 data_s:0.000 optim_s:0.000
+[2026-03-05 05:56:44] [rank: 0] [INFO] - step:12K smpl:197K ep:4K epch:7.80 loss:0.133 grdn:0.000 lr:1.7e-05 updt_s:6.057 data_s:0.000 optim_s:0.000
+[2026-03-05 06:01:47] [rank: 0] [INFO] - step:12K smpl:198K ep:4K epch:7.83 loss:0.127 grdn:0.000 lr:1.7e-05 updt_s:6.060 data_s:0.000 optim_s:0.000
+[2026-03-05 06:06:50] [rank: 0] [INFO] - step:12K smpl:198K ep:4K epch:7.86 loss:0.130 grdn:0.000 lr:1.7e-05 updt_s:6.059 data_s:0.000 optim_s:0.000
+[2026-03-05 06:11:53] [rank: 0] [INFO] - step:12K smpl:199K ep:4K epch:7.89 loss:0.126 grdn:0.000 lr:1.7e-05 updt_s:6.055 data_s:0.000 optim_s:0.000
+[2026-03-05 06:16:56] [rank: 0] [INFO] - Checkpoint policy after step 25000
+[2026-03-05 06:19:31] [rank: 0] [INFO] - Checkpoint policy after step 25000 completed.
+[2026-03-05 06:19:31] [rank: 0] [INFO] - step:12K smpl:200K ep:4K epch:7.92 loss:0.129 grdn:0.000 lr:1.7e-05 updt_s:6.056 data_s:0.000 optim_s:0.000
+[2026-03-05 06:24:33] [rank: 0] [INFO] - step:13K smpl:201K ep:4K epch:7.96 loss:0.129 grdn:0.000 lr:1.7e-05 updt_s:6.029 data_s:0.000 optim_s:0.000
+[2026-03-05 06:29:36] [rank: 0] [INFO] - step:13K smpl:202K ep:4K epch:7.99 loss:0.133 grdn:0.000 lr:1.7e-05 updt_s:6.057 data_s:0.000 optim_s:0.000
+[2026-03-05 06:34:38] [rank: 0] [INFO] - step:13K smpl:202K ep:4K epch:8.02 loss:0.138 grdn:0.000 lr:1.7e-05 updt_s:6.023 data_s:0.016 optim_s:0.000
+[2026-03-05 06:39:41] [rank: 0] [INFO] - step:13K smpl:203K ep:4K epch:8.05 loss:0.130 grdn:0.000 lr:1.6e-05 updt_s:6.060 data_s:0.000 optim_s:0.000
+[2026-03-05 06:44:44] [rank: 0] [INFO] - step:13K smpl:204K ep:4K epch:8.08 loss:0.128 grdn:0.000 lr:1.6e-05 updt_s:6.061 data_s:0.000 optim_s:0.000
+[2026-03-05 06:49:47] [rank: 0] [INFO] - step:13K smpl:205K ep:4K epch:8.11 loss:0.154 grdn:0.000 lr:1.6e-05 updt_s:6.060 data_s:0.000 optim_s:0.000
+[2026-03-05 06:54:50] [rank: 0] [INFO] - step:13K smpl:206K ep:4K epch:8.15 loss:0.128 grdn:0.000 lr:1.6e-05 updt_s:6.057 data_s:0.000 optim_s:0.000
+[2026-03-05 06:59:53] [rank: 0] [INFO] - step:13K smpl:206K ep:4K epch:8.18 loss:0.144 grdn:0.000 lr:1.6e-05 updt_s:6.059 data_s:0.000 optim_s:0.000
+[2026-03-05 07:04:56] [rank: 0] [INFO] - step:13K smpl:207K ep:4K epch:8.21 loss:0.125 grdn:0.000 lr:1.6e-05 updt_s:6.056 data_s:0.000 optim_s:0.000
+[2026-03-05 07:09:58] [rank: 0] [INFO] - step:13K smpl:208K ep:4K epch:8.24 loss:0.126 grdn:0.000 lr:1.6e-05 updt_s:6.054 data_s:0.000 optim_s:0.000
+[2026-03-05 07:15:02] [rank: 0] [INFO] - step:13K smpl:209K ep:4K epch:8.27 loss:0.154 grdn:0.000 lr:1.6e-05 updt_s:6.066 data_s:0.000 optim_s:0.000
+[2026-03-05 07:20:05] [rank: 0] [INFO] - step:13K smpl:210K ep:4K epch:8.30 loss:0.130 grdn:0.000 lr:1.6e-05 updt_s:6.060 data_s:0.000 optim_s:0.000
+[2026-03-05 07:25:08] [rank: 0] [INFO] - step:13K smpl:210K ep:4K epch:8.34 loss:0.130 grdn:0.000 lr:1.6e-05 updt_s:6.057 data_s:0.000 optim_s:0.000
+[2026-03-05 07:30:10] [rank: 0] [INFO] - step:13K smpl:211K ep:4K epch:8.37 loss:0.138 grdn:0.000 lr:1.6e-05 updt_s:6.055 data_s:0.000 optim_s:0.000
+[2026-03-05 07:35:13] [rank: 0] [INFO] - step:13K smpl:212K ep:4K epch:8.40 loss:0.136 grdn:0.000 lr:1.6e-05 updt_s:6.052 data_s:0.000 optim_s:0.000
+[2026-03-05 07:40:16] [rank: 0] [INFO] - step:13K smpl:213K ep:4K epch:8.43 loss:0.127 grdn:0.000 lr:1.6e-05 updt_s:6.056 data_s:0.000 optim_s:0.000
+[2026-03-05 07:45:18] [rank: 0] [INFO] - step:13K smpl:214K ep:4K epch:8.46 loss:0.126 grdn:0.000 lr:1.6e-05 updt_s:6.051 data_s:0.000 optim_s:0.000
+[2026-03-05 07:50:21] [rank: 0] [INFO] - step:13K smpl:214K ep:4K epch:8.49 loss:0.132 grdn:0.000 lr:1.6e-05 updt_s:6.051 data_s:0.000 optim_s:0.000
+[2026-03-05 07:55:24] [rank: 0] [INFO] - step:13K smpl:215K ep:4K epch:8.53 loss:0.138 grdn:0.000 lr:1.6e-05 updt_s:6.051 data_s:0.000 optim_s:0.000
+[2026-03-05 08:00:26] [rank: 0] [INFO] - step:14K smpl:216K ep:4K epch:8.56 loss:0.125 grdn:0.000 lr:1.6e-05 updt_s:6.054 data_s:0.000 optim_s:0.000
+[2026-03-05 08:05:29] [rank: 0] [INFO] - step:14K smpl:217K ep:4K epch:8.59 loss:0.140 grdn:0.000 lr:1.5e-05 updt_s:6.056 data_s:0.000 optim_s:0.000
+[2026-03-05 08:10:32] [rank: 0] [INFO] - step:14K smpl:218K ep:4K epch:8.62 loss:0.133 grdn:0.000 lr:1.5e-05 updt_s:6.062 data_s:0.000 optim_s:0.000
+[2026-03-05 08:15:35] [rank: 0] [INFO] - step:14K smpl:218K ep:4K epch:8.65 loss:0.132 grdn:0.000 lr:1.5e-05 updt_s:6.060 data_s:0.000 optim_s:0.000
+[2026-03-05 08:20:38] [rank: 0] [INFO] - step:14K smpl:219K ep:4K epch:8.68 loss:0.125 grdn:0.000 lr:1.5e-05 updt_s:6.053 data_s:0.000 optim_s:0.000
+[2026-03-05 08:25:41] [rank: 0] [INFO] - step:14K smpl:220K ep:4K epch:8.72 loss:0.134 grdn:0.000 lr:1.5e-05 updt_s:6.054 data_s:0.000 optim_s:0.000
+[2026-03-05 08:30:43] [rank: 0] [INFO] - step:14K smpl:221K ep:4K epch:8.75 loss:0.127 grdn:0.000 lr:1.5e-05 updt_s:6.052 data_s:0.000 optim_s:0.000
+[2026-03-05 08:35:46] [rank: 0] [INFO] - step:14K smpl:222K ep:4K epch:8.78 loss:0.116 grdn:0.000 lr:1.5e-05 updt_s:6.054 data_s:0.001 optim_s:0.000
+[2026-03-05 08:40:49] [rank: 0] [INFO] - step:14K smpl:222K ep:4K epch:8.81 loss:0.123 grdn:0.000 lr:1.5e-05 updt_s:6.057 data_s:0.000 optim_s:0.000
+[2026-03-05 08:45:53] [rank: 0] [INFO] - step:14K smpl:223K ep:4K epch:8.84 loss:0.145 grdn:0.000 lr:1.5e-05 updt_s:6.070 data_s:0.000 optim_s:0.000

@@ -1,0 +1,989 @@
+from lerobot.common.policies.pi05.configuration_pi05 import PI05Config
+from lerobot.common.policies.pi05.paligemma_with_expert import get_gemma_config, PaliGemmaWithExpertModel
+from torch import Tensor, nn
+import torch
+import torch.nn.functional as F
+import logging
+import math
+import numpy as np
+from collections import deque
+from lerobot.common.constants import (
+    ACTION,
+    OBS_LANGUAGE_ATTENTION_MASK,
+    OBS_LANGUAGE_TOKENS,
+    OPENPI_ATTENTION_MASK_VALUE,
+    OBS_ROBOT
+)
+from lerobot.common.policies.pretrained import PreTrainedPolicy
+from lerobot.common.policies.normalize import Normalize, Unnormalize
+from lerobot.common.datasets.rotation_convert import euler_to_quaternion
+from lerobot.common.policies.pi05.hybrid_edm_sde import HybridEDMSDE
+
+from transformers import AutoTokenizer
+
+
+def get_safe_dtype(target_dtype, device_type):
+    """Get a safe dtype for the given device type."""
+    if device_type == "mps" and target_dtype == torch.float64:
+        return torch.float32
+    if device_type == "cpu":
+        # CPU doesn't support bfloat16, use float32 instead
+        if target_dtype == torch.bfloat16:
+            return torch.float32
+        if target_dtype == torch.float64:
+            return torch.float64
+    return target_dtype
+
+
+def create_sinusoidal_pos_embedding(  # see openpi `create_sinusoidal_pos_embedding` (exact copy)
+    time: torch.Tensor, dimension: int, min_period: float, max_period: float, device="cpu"
+) -> Tensor:
+    """Computes sine-cosine positional embedding vectors for scalar positions."""
+    if dimension % 2 != 0:
+        raise ValueError(f"dimension ({dimension}) must be divisible by 2")
+
+    if time.ndim != 1:
+        raise ValueError("The time tensor is expected to be of shape `(batch_size, )`.")
+
+    dtype = get_safe_dtype(torch.float64, device.type)
+    fraction = torch.linspace(0.0, 1.0, dimension // 2, dtype=dtype, device=device)
+    period = min_period * (max_period / min_period) ** fraction
+
+    # Compute the outer product
+    scaling_factor = 1.0 / period * 2 * math.pi
+    sin_input = scaling_factor[None, :] * time[:, None]
+    return torch.cat([torch.sin(sin_input), torch.cos(sin_input)], dim=1)
+
+
+def sample_beta(alpha, beta, bsize, device):  # see openpi `sample_beta` (exact copy)
+    dtype = torch.bfloat16
+    alpha_t = torch.as_tensor(alpha, dtype=dtype, device=device)
+    beta_t = torch.as_tensor(beta, dtype=dtype, device=device)
+    dist = torch.distributions.Beta(alpha_t, beta_t)
+    return dist.sample((bsize,))
+
+
+def make_att_2d_masks(pad_masks, att_masks):  # see openpi `make_att_2d_masks` (exact copy)
+    """Copied from big_vision.
+
+    Tokens can attend to valid inputs tokens which have a cumulative mask_ar
+    smaller or equal to theirs. This way `mask_ar` int[B, N] can be used to
+    setup several types of attention, for example:
+
+      [[1 1 1 1 1 1]]: pure causal attention.
+
+      [[0 0 0 1 1 1]]: prefix-lm attention. The first 3 tokens can attend between
+          themselves and the last 3 tokens have a causal attention. The first
+          entry could also be a 1 without changing behaviour.
+
+      [[1 0 1 0 1 0 0 1 0 0]]: causal attention between 4 blocks. Tokens of a
+          block can attend all previous blocks and all tokens on the same block.
+
+    Args:
+      input_mask: bool[B, N] true if its part of the input, false if padding.
+      mask_ar: int32[B, N] mask that's 1 where previous tokens cannot depend on
+        it and 0 where it shares the same attention mask as the previous token.
+    """
+    if att_masks.ndim != 2:
+        raise ValueError(att_masks.ndim)
+    if pad_masks.ndim != 2:
+        raise ValueError(pad_masks.ndim)
+
+    cumsum = torch.cumsum(att_masks, dim=1)
+    att_2d_masks = cumsum[:, None, :] <= cumsum[:, :, None]
+    pad_2d_masks = pad_masks[:, None, :] * pad_masks[:, :, None]
+    return att_2d_masks & pad_2d_masks
+
+
+def pad_vector(vector, new_dim):
+    """Pad the last dimension of a vector to new_dim with zeros.
+
+    Can be (batch_size x sequence_length x features_dimension)
+    or (batch_size x features_dimension)
+    """
+    if vector.shape[-1] >= new_dim:
+        return vector
+    return F.pad(vector, (0, new_dim - vector.shape[-1]))
+
+
+def resize_with_pad_torch(  # see openpi `resize_with_pad_torch` (exact copy)
+    images: torch.Tensor,
+    height: int,
+    width: int,
+    mode: str = "bilinear",
+) -> torch.Tensor:
+    """PyTorch version of resize_with_pad. Resizes an image to a target height and width without distortion
+    by padding with black. If the image is float32, it must be in the range [-1, 1].
+
+    Args:
+        images: Tensor of shape [*b, h, w, c] or [*b, c, h, w]
+        height: Target height
+        width: Target width
+        mode: Interpolation mode ('bilinear', 'nearest', etc.)
+
+    Returns:
+        Resized and padded tensor with same shape format as input
+    """
+    # Check if input is in channels-last format [*b, h, w, c] or channels-first [*b, c, h, w]
+    if images.shape[-1] <= 4:  # Assume channels-last format
+        channels_last = True
+        if images.dim() == 3:
+            images = images.unsqueeze(0)  # Add batch dimension
+        images = images.permute(0, 3, 1, 2)  # [b, h, w, c] -> [b, c, h, w]
+    else:
+        channels_last = False
+        if images.dim() == 3:
+            images = images.unsqueeze(0)  # Add batch dimension
+
+    batch_size, channels, cur_height, cur_width = images.shape
+
+    # Calculate resize ratio
+    ratio = max(cur_width / width, cur_height / height)
+    resized_height = int(cur_height / ratio)
+    resized_width = int(cur_width / ratio)
+
+    # Resize
+    resized_images = F.interpolate(
+        images,
+        size=(resized_height, resized_width),
+        mode=mode,
+        align_corners=False if mode == "bilinear" else None,
+    )
+
+    # Handle dtype-specific clipping
+    if images.dtype == torch.uint8:
+        resized_images = torch.round(resized_images).clamp(0, 255).to(torch.uint8)
+    elif images.dtype == torch.float32:
+        resized_images = resized_images.clamp(-1.0, 1.0)
+    else:
+        raise ValueError(f"Unsupported image dtype: {images.dtype}")
+
+    # Calculate padding
+    pad_h0, remainder_h = divmod(height - resized_height, 2)
+    pad_h1 = pad_h0 + remainder_h
+    pad_w0, remainder_w = divmod(width - resized_width, 2)
+    pad_w1 = pad_w0 + remainder_w
+
+    # Pad
+    constant_value = 0 if images.dtype == torch.uint8 else -1.0
+    padded_images = F.pad(
+        resized_images,
+        (pad_w0, pad_w1, pad_h0, pad_h1),  # left, right, top, bottom
+        mode="constant",
+        value=constant_value,
+    )
+
+    # Convert back to original format if needed
+    if channels_last:
+        padded_images = padded_images.permute(0, 2, 3, 1)  # [b, c, h, w] -> [b, h, w, c]
+
+    return padded_images
+
+
+class PI05Policy(PreTrainedPolicy):
+    """PI05 Policy for LeRobot."""
+
+    config_class = PI05Config
+    name = "pi05"
+
+    def __init__(
+        self,
+        config: PI05Config,
+        dataset_stats: dict[str, dict[str, Tensor]] | None = None,
+    ):
+        """
+        Args:
+            config: Policy configuration class instance.
+        """
+        super().__init__(config)
+        config.validate_features()
+        self.config = config
+        self.normalize_inputs = Normalize(config.input_features, config.normalization_mapping, dataset_stats)
+        self.normalize_targets = Normalize(
+            config.output_features, config.normalization_mapping, dataset_stats
+        )
+        self.unnormalize_outputs = Unnormalize(
+            config.output_features, config.normalization_mapping, dataset_stats
+        )
+        
+
+        # Initialize the core PI05 model
+        self.model = PI05FlowMatching(config)
+
+        # tokenizer_path = "/Data/lzl/huggingface/paligemma-3b-pt-224"
+        # tokenizer_path = "/mnt/wangxiaofa/RDT_module_params/paligemma-3b-pt-224/"
+        # 使用本地文件，按需改动
+        tokenizer_path = "/home/v-wangxiaofa/amlt_jobs/models/paligemma-3b-pt-224/google/paligemma-3b-pt-224"
+        self.language_tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
+
+        #self.language_tokenizer = AutoTokenizer.from_pretrained(
+        #    tokenizer_path, 
+        #    use_fast=False,        
+        #    local_files_only=True, 
+        #    trust_remote_code=True
+        #)
+        if config.add_new_tokens:
+            COMPRESS_SC_TOKEN = 'CP_SC'
+            COMPRESS_ACTION_TOKEN = 'CP_ACT'
+            self.COMPRESS_ACTION_TOKEN = COMPRESS_ACTION_TOKEN
+            self.COMPRESS_SC_TOKEN = COMPRESS_SC_TOKEN
+            new_action_tokens = [f"[{COMPRESS_ACTION_TOKEN}]"]
+            new_scene_tokens = [f"[{COMPRESS_SC_TOKEN}]"]
+            self.language_tokenizer.add_tokens(new_action_tokens)
+            self.language_tokenizer.add_tokens(new_scene_tokens)
+            # self.cp_act_token_idx =  [self.processor.tokenizer(f"[{COMPRESS_ACTION_TOKEN}{i}]", add_special_tokens=False).input_ids[0] for i in range(cfg.policy.num_action_token)]
+            # self.cp_sc_token_idx = [self.processor.tokenizer(f"[{COMPRESS_SC_TOKEN}{i}]", add_special_tokens=False).input_ids[0] for i in range(cfg.policy.num_sc_token)]
+            self.cp_act_token_idx =  [self.language_tokenizer(f"[{COMPRESS_ACTION_TOKEN}]", add_special_tokens=False).input_ids[0]]
+            self.cp_sc_token_idx = [self.language_tokenizer(f"[{COMPRESS_SC_TOKEN}]", add_special_tokens=False).input_ids[0]]
+            print(f"Pi05 CP_IMG token idx: {self.cp_sc_token_idx}, CP_ACT token idx: {self.cp_act_token_idx}")
+        
+
+        self.model = PI05FlowMatching(config)
+        self.model.paligemma_with_expert.paligemma.lm_head = nn.Identity()
+        
+        # Enable gradient checkpointing if requested
+        if config.gradient_checkpointing:
+            self.model.gradient_checkpointing_enable()
+
+        self.model.to(config.device)
+        self.dtype = torch.bfloat16
+        self.use_new_tokens = config.use_new_tokens
+
+        self.reset()
+    
+    def resize_token_embedding(self):
+        self.model.paligemma_with_expert.paligemma.language_model.resize_token_embeddings(len(self.language_tokenizer))
+
+    def _fix_pytorch_state_dict_keys(
+        self, state_dict
+    ):  # see openpi `BaseModelConfig, _fix_pytorch_state_dict_keys`
+        """Fix state dict keys to match current model architecture."""
+        import re
+
+        fixed_state_dict = {}
+
+        for key, value in state_dict.items():
+            new_key = "model." + key 
+
+            # Handle layer norm structure changes: .weight -> .dense.weight + .dense.bias
+            # For gemma expert layers
+            if re.match(
+                r"paligemma_with_expert\.gemma_expert\.model\.layers\.\d+\.(input_layernorm|post_attention_layernorm)\.weight",
+                key,
+            ):
+                # Check if the model actually has adaRMS enabled for the expert
+                expert_uses_adarms = getattr(
+                    self.model.paligemma_with_expert.gemma_expert.config, "use_adarms", False
+                )
+                if expert_uses_adarms:
+                    logging.warning(f"Skipping layer norm key (adaRMS mismatch): {key}")
+                    continue
+
+            if re.match(r"paligemma_with_expert\.gemma_expert\.model\.norm\.weight", key):
+                # Check if the model actually has adaRMS enabled for the expert
+                expert_uses_adarms = getattr(
+                    self.model.paligemma_with_expert.gemma_expert.config, "use_adarms", False
+                )
+                if expert_uses_adarms:
+                    logging.warning(f"Skipping norm key (adaRMS mismatch): {key}")
+                    continue
+
+            # Handle MLP naming changes for pi05
+            # pi05 model expects time_mlp_*, but checkpoint might have action_time_mlp_*
+            if key.startswith("action_time_mlp_in."):
+                new_key = key.replace("action_time_mlp_in.", "time_mlp_in.")
+            elif key.startswith("action_time_mlp_out."):
+                new_key = key.replace("action_time_mlp_out.", "time_mlp_out.")
+            # Also handle state_proj which shouldn't exist in pi05
+            if key.startswith("state_proj."):
+                logging.warning(f"Skipping state_proj key in pi05 mode: {key}")
+                continue
+
+            # Handle vision tower embedding layer potential differences
+            if "patch_embedding" in key:
+                # Some checkpoints might have this, but current model expects different structure
+                logging.warning(f"Vision embedding key might need handling: {key}")
+
+            fixed_state_dict[new_key] = value
+
+        return fixed_state_dict
+
+    def get_optim_params(self) -> dict:
+        return self.parameters()
+
+    def reset(self):
+        """Reset internal state - called when environment resets."""
+        self._action_queue = deque(maxlen=self.config.n_action_steps)
+        self._queues = {
+            ACTION: deque(maxlen=self.config.n_action_steps),
+        }
+
+    def convert_to_dtype(self, vector:torch.Tensor):
+        if not isinstance(vector, type(None)):
+            if vector.is_floating_point():
+                vector = vector.to(dtype=self.dtype)
+        return vector
+
+    def _preprocess_images(self, batch: dict[str, Tensor]) -> tuple[list[Tensor], list[Tensor]]:
+        """Preprocess images for the model.
+
+        Images from LeRobot are typically in [B, C, H, W] format and normalized to [0, 1].
+        PaliGemma expects images in [B, C, H, W] format and normalized to [-1, 1].
+        """
+        images = []
+        img_masks = []
+
+        # Get device from model parameters
+        device = next(self.parameters()).device
+
+        present_img_keys = [key for key in self.config.image_features if key in batch]
+        missing_img_keys = [key for key in self.config.image_features if key not in batch]
+        # present_img_keys = ["observation.images.primary"]
+        # missing_img_keys = []
+        # print(present_img_keys, missing_img_keys)
+
+        if len(present_img_keys) == 0:
+            raise ValueError(
+                f"All image features are missing from the batch. At least one expected. "
+                f"(batch: {batch.keys()}) (image_features: {self.config.image_features})"
+            )
+
+        # Preprocess image features present in the batch
+        for key in present_img_keys:
+            img = batch[key]
+
+            # Ensure tensor is on the same device as the model
+            if img.device != device:
+                img = img.to(device)
+
+            # Ensure float32 dtype for consistency
+            if img.dtype != torch.float32:
+                img = img.to(torch.float32)
+
+            # from openpi preprocess_observation_pytorch: Handle both [B, C, H, W] and [B, H, W, C] formats
+            is_channels_first = img.shape[1] == 3  # Check if channels are in dimension 1
+
+            if is_channels_first:
+                # Convert [B, C, H, W] to [B, H, W, C] for processing
+                img = img.permute(0, 2, 3, 1)
+
+            # from openpi preprocess_observation_pytorch: Resize with padding if needed
+            if img.shape[1:3] != self.config.image_resolution:
+                img = resize_with_pad_torch(img, *self.config.image_resolution)
+
+            # Normalize from [0,1] to [-1,1] as expected by siglip
+            img = img * 2.0 - 1.0
+
+            # from openpi preprocess_observation_pytorch: Convert back to [B, C, H, W] format if it was originally channels-first
+            if is_channels_first:
+                img = img.permute(0, 3, 1, 2)  # [B, H, W, C] -> [B, C, H, W]
+
+            images.append(img)
+            # Create mask (all ones for real images)
+            bsize = img.shape[0]
+            mask = torch.ones(bsize, dtype=torch.bool, device=device)
+            img_masks.append(mask)
+
+        # Create image features not present in the batch as fully 0 padded images
+        for _num_empty_cameras in range(len(missing_img_keys)):
+            img = torch.ones_like(img) * -1  # Padded with -1 for SigLIP
+            mask = torch.zeros_like(mask)  # Mask is zero for empty cameras
+            images.append(img)
+            img_masks.append(mask)
+
+        return images, img_masks
+    
+
+    def prepare_language(self, batch) -> tuple[Tensor, Tensor]:
+        """Tokenize the text input"""
+        device = batch[OBS_ROBOT].device
+        tasks = batch["task"]
+        # print(tasks)
+
+        # PaliGemma prompt has to end with a new line
+        # tasks = [task if task.endswith("\n") else f"{task}\n" for task in tasks]
+
+        tokenized_prompt = self.language_tokenizer.__call__(
+            tasks,
+            padding="max_length",
+            # padding=True,
+            padding_side="right",
+            max_length = 1200,
+            # max_length=self.config.tokenizer_max_length,
+            truncation=True,
+            return_tensors="pt",
+        )
+        lang_tokens = tokenized_prompt["input_ids"].to(device=device)
+        lang_masks = tokenized_prompt["attention_mask"].to(device=device, dtype=torch.bool)
+
+        return lang_tokens, lang_masks
+
+    def prepare_action(self, batch):
+        """Pad action"""
+        actions = pad_vector(batch[ACTION], self.config.max_action_dim)
+        return actions
+
+    @torch.no_grad()
+    def select_action(self, batch: dict[str, Tensor]) -> Tensor:
+        """Select a single action given environment observations."""
+        self.eval()
+
+        # # Action queue logic for n_action_steps > 1
+        # if len(self._action_queue) == 0:
+        #     actions = self.predict_action_chunk(batch)[:, : self.config.n_action_steps]
+                # actions = self.unnormalize_outputs({"action": actions})["action"]
+                # actions = actions.to(dtype=torch.float32)
+        #     # Transpose to get shape (n_action_steps, batch_size, action_dim)
+        #     self._action_queue.extend(actions.transpose(0, 1))
+
+        # return self._action_queue.popleft()
+        
+        actions = self.predict_action_chunk(batch)[:, : self.config.n_action_steps]
+        # print(actions.shape)
+        actions = self.unnormalize_outputs({"action": actions})["action"]
+        actions = actions.to(dtype=torch.float32)
+        return actions
+
+    @torch.no_grad()
+    def predict_action_chunk(self, batch: dict[str, Tensor]) -> Tensor:
+        """Predict a chunk of actions given environment observations."""
+        self.eval()
+        
+        # convert euler to quant, for aglex
+        # quat_state = torch.ones((batch[OBS_ROBOT].shape[0], 16)).to(device=batch[OBS_ROBOT].device)
+        # quat_state[:, 0:3] = batch[OBS_ROBOT][:, 0:3]
+        # quat_state[:, 3:7] = euler_to_quaternion(batch[OBS_ROBOT][:, 3:6])
+        # quat_state[:, 7:8] = batch[OBS_ROBOT][:, 6:7]
+        # quat_state[:, 0+8:3+8] = batch[OBS_ROBOT][:, 0+7:3+7]
+        # quat_state[:, 3+8:7+8] = euler_to_quaternion(batch[OBS_ROBOT][:, 3+7:6+7])
+        # quat_state[:, 7+8:8+8] = batch[OBS_ROBOT][:, 6+7:7+7]
+        # batch[OBS_ROBOT] = quat_state
+        
+        batch = self.normalize_inputs(batch)
+        state_np = batch[OBS_ROBOT].to(dtype=torch.float32).cpu().numpy()
+        discretized_states = np.digitize(state_np, bins=np.linspace(-1, 1, 256 + 1)[:-1]) - 1
+        full_prompts = []
+        tasks = batch["task"]
+        
+        if self.use_new_tokens == False:
+            for i, task in enumerate(tasks):
+                cleaned_text = task.strip().replace("_", " ").replace("\n", " ")
+                state_str = " ".join(map(str, discretized_states[i]))
+                full_prompt = f"Task: {cleaned_text}, State: {state_str};\nAction: "
+                full_prompts.append(full_prompt)
+        else:
+            for i, task in enumerate(tasks):
+                cleaned_text = task.strip().replace("_", " ").replace("\n", " ")
+                state_str = " ".join(map(str, discretized_states[i]))
+                # full_prompt = f"Task: {cleaned_text}, State: {state_str};\nAction: "
+                full_prompt = f"Task: {cleaned_text}, State: {state_str}; "
+                summary_text = ""
+                summary_text = summary_text + "Scene representations:"
+                for j in range(64):
+                    summary_text += f"[{self.COMPRESS_SC_TOKEN}] "
+                summary_text += ". Action representations:"
+                for j in range(64):
+                    summary_text += f"[{self.COMPRESS_ACTION_TOKEN}] "
+                summary_text += ".\nAction:"
+                full_prompt = full_prompt + summary_text
+                full_prompts.append(full_prompt)
+        
+        batch["task"] = full_prompts
+        # Prepare inputs
+        images, img_masks = self._preprocess_images(batch)
+        tokens, masks = self.prepare_language(batch)
+        # Sample actions using the model (no separate state needed for PI05)
+        actions = self.model.sample_actions(images, img_masks, tokens, masks)
+
+        # Unpad actions to actual action dimension
+        original_action_dim = self.config.output_features[ACTION].shape[0]
+        actions = actions[:, :, :original_action_dim]
+
+        return actions
+
+    def forward(self, batch: dict[str, Tensor]) -> tuple[Tensor, dict]:
+        """Run the batch through the model and compute the loss for training."""
+
+        # 先归一化，然后再pad
+        batch = self.normalize_inputs(batch)
+        # print("norm pre", batch["action"][:,:, 6])
+        batch = self.normalize_targets(batch)
+        # print("norm after", batch["action"][:, :, 6])
+
+        # Prepare inputs
+        images, img_masks = self._preprocess_images(batch)
+
+        # follow lerobot pi05: https://github.com/huggingface/lerobot/blob/main/src/lerobot/policies/pi05/processor_pi05.py#L79
+        state_np = batch[OBS_ROBOT].cpu().numpy()
+        discretized_states = np.digitize(state_np, bins=np.linspace(-1, 1, 256 + 1)[:-1]) - 1
+        full_prompts = []
+        tasks = batch["task"]
+        if self.use_new_tokens == False:
+            # print("not use_new_tokens")
+            for i, task in enumerate(tasks):
+                cleaned_text = task.strip().replace("_", " ").replace("\n", " ")
+                state_str = " ".join(map(str, discretized_states[i]))
+                full_prompt = f"Task: {cleaned_text}, State: {state_str};\nAction: "
+                full_prompts.append(full_prompt)
+        else:
+            for i, task in enumerate(tasks):
+                cleaned_text = task.strip().replace("_", " ").replace("\n", " ")
+                state_str = " ".join(map(str, discretized_states[i]))
+                # full_prompt = f"Task: {cleaned_text}, State: {state_str};\nAction: "
+                full_prompt = f"Task: {cleaned_text}, State: {state_str}; "
+                summary_text = ""
+                summary_text = summary_text + "Scene representations:"
+                for j in range(64):
+                    summary_text += f"[{self.COMPRESS_SC_TOKEN}] "
+                summary_text += ". Action representations:"
+                for j in range(64):
+                    summary_text += f"[{self.COMPRESS_ACTION_TOKEN}] "
+                summary_text += ".\nAction:"
+                full_prompt = full_prompt + summary_text
+                full_prompts.append(full_prompt)
+        
+        batch["task"] = full_prompts
+        tokens, masks = self.prepare_language(batch)
+        # print(tokens.shape)
+        # tokens, masks = batch[f"{OBS_LANGUAGE_TOKENS}"], batch[f"{OBS_LANGUAGE_ATTENTION_MASK}"]
+
+        actions = self.prepare_action(batch)
+        
+        images = [self.convert_to_dtype(img) for img in images]
+        tokens = self.convert_to_dtype(tokens)
+        actions = self.convert_to_dtype(actions)
+
+        # Compute loss (no separate state needed for PI05)
+        losses = self.model.forward(images, img_masks, tokens, masks, actions)
+
+        # Truncate losses to actual action dimensions
+        if self.config.loss_type != "xvla_loss":
+            original_action_dim = self.config.output_features[ACTION].shape[0]
+            losses = losses[:, :, :original_action_dim]
+
+        loss = losses.mean()
+
+        loss_dict = {
+            "loss": loss.item(),
+            # "loss_per_dim": losses.mean(dim=[0, 1]).detach().cpu().numpy().tolist(),
+        }
+
+        return loss, loss_dict
+
+
+class PI05FlowMatching(nn.Module):  # see openpi `PI0Pytorch`
+    """Core PI05 PyTorch model."""
+
+    def __init__(self, config: PI05Config):
+        super().__init__()
+        self.config = config
+        self.loss_type = config.loss_type
+
+        paligemma_config = get_gemma_config(config.paligemma_variant)
+        action_expert_config = get_gemma_config(config.action_expert_variant)
+
+        self.paligemma_with_expert = PaliGemmaWithExpertModel(
+            paligemma_config,
+            action_expert_config,
+            use_adarms=[False, True],
+            precision=config.dtype,
+        )
+
+        self.action_in_proj = nn.Linear(config.max_action_dim, action_expert_config.width)
+        self.action_out_proj = nn.Linear(action_expert_config.width, config.max_action_dim)
+
+        self.time_mlp_in = nn.Linear(action_expert_config.width, action_expert_config.width)
+        self.time_mlp_out = nn.Linear(action_expert_config.width, action_expert_config.width)
+
+        # Initialize gradient checkpointing flag
+        self.gradient_checkpointing_enabled = True
+        self.gradient_checkpointing_enable()
+        self.dtype = torch.bfloat16
+
+        # Compile model if requested
+        if config.compile_model:
+            torch.set_float32_matmul_precision("high")
+            self.sample_actions = torch.compile(self.sample_actions, mode=config.compile_mode)
+        self.set_requires_grad()
+        self.action_type = config.action_type
+        self.mse = nn.MSELoss()
+        self.bce = nn.BCEWithLogitsLoss()
+        # https://github.com/NVlabs/cosmos-policy/blob/main/cosmos_policy/config/experiment/cosmos_policy_experiment_configs.py#L130C21-L136C40
+        self.time_sampler = HybridEDMSDE(hybrid_sigma_distribution=True,
+                    p_mean=1.3862943611198906,  # Copied from base model config
+                    p_std=1.2,
+                    sigma_max=200,
+                    sigma_min=0.01,
+                    uniform_lower=1.0,
+                    uniform_upper=85.0)
+        # msg = """An incorrect transformer version is used, please create an issue on https://github.com/huggingface/lerobot/issues"""
+
+        # try:
+        #     from transformers.models.siglip import check
+        # transformers version must be "4.53.2"
+        #     if not check.check_whether_transformers_replace_is_installed_correctly():
+        #         raise ValueError(msg)
+        # except ImportError:
+        #     raise ValueError(msg) from None
+
+    def set_requires_grad(self):        
+        if self.config.freeze_vision_encoder:
+            print(f"Freeze vision encoder from paligemma")
+            self.paligemma_with_expert.paligemma.vision_tower.eval()
+            for params in self.paligemma_with_expert.paligemma.vision_tower.parameters():
+                params.requires_grad = False
+
+        if self.config.train_expert_only:
+            print(print(f"Freeze paligemma vlm"))
+            self.paligemma_with_expert.paligemma.eval()
+            for params in self.paligemma_with_expert.paligemma.parameters():
+                params.requires_grad = False
+            
+    
+    def gradient_checkpointing_enable(self):
+        """Enable gradient checkpointing for memory optimization."""
+        self.gradient_checkpointing_enabled = True
+        self.paligemma_with_expert.paligemma.language_model.gradient_checkpointing = True
+        self.paligemma_with_expert.paligemma.vision_tower.gradient_checkpointing = True
+        self.paligemma_with_expert.gemma_expert.model.gradient_checkpointing = True
+        logging.info("Enabled gradient checkpointing for PI05Pytorch model")
+
+    def gradient_checkpointing_disable(self):
+        """Disable gradient checkpointing."""
+        self.gradient_checkpointing_enabled = False
+        self.paligemma_with_expert.paligemma.language_model.gradient_checkpointing = False
+        self.paligemma_with_expert.paligemma.vision_tower.gradient_checkpointing = False
+        self.paligemma_with_expert.gemma_expert.model.gradient_checkpointing = False
+        logging.info("Disabled gradient checkpointing for PI05Pytorch model")
+
+    def _apply_checkpoint(self, func, *args, **kwargs):
+        """Helper method to apply gradient checkpointing if enabled."""
+        if self.gradient_checkpointing_enabled and self.training:
+            return torch.utils.checkpoint.checkpoint(
+                func, *args, use_reentrant=False, preserve_rng_state=False, **kwargs
+            )
+        return func(*args, **kwargs)
+
+    def _prepare_attention_masks_4d(self, att_2d_masks):
+        """Helper method to prepare 4D attention masks for transformer."""
+        att_2d_masks_4d = att_2d_masks[:, None, :, :]
+        return torch.where(att_2d_masks_4d, 0.0, OPENPI_ATTENTION_MASK_VALUE)
+
+    def sample_noise(self, shape, device):
+        return torch.normal(
+            mean=0.0,
+            std=1.0,
+            size=shape,
+            dtype=self.dtype,
+            device=device,
+        )
+
+    def sample_time(self, bsize, device):
+        time_beta = sample_beta(
+            self.config.time_sampling_beta_alpha, self.config.time_sampling_beta_beta, bsize, device
+        )
+        time = time_beta * self.config.time_sampling_scale + self.config.time_sampling_offset
+        return time.to(dtype=self.dtype, device=device)
+
+    def embed_prefix(
+        self, images, img_masks, tokens, masks
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Embed images with SigLIP and language tokens with embedding layer."""
+        embs = []
+        pad_masks = []
+        att_masks = []
+
+        # Process images
+        for img, img_mask in zip(images, img_masks, strict=True):
+
+            def image_embed_func(img):
+                return self.paligemma_with_expert.embed_image(img)
+
+            img_emb = self._apply_checkpoint(image_embed_func, img)
+            bsize, num_img_embs = img_emb.shape[:2]
+
+            embs.append(img_emb)
+            pad_masks.append(img_mask[:, None].expand(bsize, num_img_embs))
+            att_masks += [0] * num_img_embs
+
+        # Process language tokens
+        def lang_embed_func(tokens):
+            lang_emb = self.paligemma_with_expert.embed_language_tokens(tokens)
+            lang_emb_dim = lang_emb.shape[-1]
+            return lang_emb * math.sqrt(lang_emb_dim)
+
+        lang_emb = self._apply_checkpoint(lang_embed_func, tokens)
+        embs.append(lang_emb)
+        pad_masks.append(masks)
+
+        num_lang_embs = lang_emb.shape[1]
+        att_masks += [0] * num_lang_embs
+
+        embs = torch.cat(embs, dim=1)
+        pad_masks = torch.cat(pad_masks, dim=1)
+        att_masks = torch.tensor(att_masks, dtype=torch.bool, device=pad_masks.device)
+
+        bsize = pad_masks.shape[0]
+        att_masks = att_masks[None, :].expand(bsize, len(att_masks))
+
+        return embs, pad_masks, att_masks
+
+    def embed_suffix(self, noisy_actions, timestep):
+        """Embed noisy_actions, timestep to prepare for Expert Gemma processing."""
+        embs = []
+        pad_masks = []
+        att_masks = []
+
+        # Embed timestep using sine-cosine positional encoding
+        time_emb = create_sinusoidal_pos_embedding(
+            timestep,
+            self.action_in_proj.out_features,
+            min_period=self.config.min_period,
+            max_period=self.config.max_period,
+            device=timestep.device,
+        )
+        # Fuse timestep + action information using an MLP
+        def action_proj_func(noisy_actions):
+            return self.action_in_proj(noisy_actions)
+
+        action_emb = self._apply_checkpoint(action_proj_func, noisy_actions)
+
+        def time_mlp_func(time_emb):
+            x = self.time_mlp_in(time_emb)
+            x = F.silu(x)
+            x = self.time_mlp_out(x)
+            return F.silu(x)
+        
+        time_emb = time_emb.to(dtype=self.dtype)
+        time_emb = self._apply_checkpoint(time_mlp_func, time_emb)
+        action_time_emb = action_emb
+        adarms_cond = time_emb
+
+        embs.append(action_time_emb)
+        bsize, action_time_dim = action_time_emb.shape[:2]
+        action_time_mask = torch.ones(bsize, action_time_dim, dtype=torch.bool, device=timestep.device)
+        pad_masks.append(action_time_mask)
+
+        # Set attention masks so that image, language and state inputs do not attend to action tokens
+        att_masks += [1] + ([0] * (self.config.chunk_size - 1))
+
+        embs = torch.cat(embs, dim=1)
+        pad_masks = torch.cat(pad_masks, dim=1)
+        att_masks = torch.tensor(att_masks, dtype=embs.dtype, device=embs.device)
+        att_masks = att_masks[None, :].expand(bsize, len(att_masks))
+
+        return embs, pad_masks, att_masks, adarms_cond
+
+    def xvla_loss(self, gt_action, pred_action):
+        '''
+        gt_action: B 50 32
+        pred_action: B 50 32
+        '''
+        # print(gt_action.shape, pred_action.shape)
+        # print("pre", gt_action[:, :, 6])
+        # there action has beed selected from 17 dim
+        gt_action[:, :, -1] = torch.round(gt_action[:, :, -1]).long()
+        # print("after", gt_action[:, :, 6])
+        full_action_dim = self.config.output_features[ACTION].shape[0]
+        # print(full_action_dim)
+        # if full_action_dim < 10:
+        gt_action = gt_action[:, :, :self.config.output_features[ACTION].shape[0]]
+        pred_action = pred_action[:, :, :self.config.output_features[ACTION].shape[0]]
+        gripper_loss = self.bce(pred_action[:, :, -1], gt_action[:, :, -1]) * self.config.GRIPPER_SCALE
+        position_loss = self.mse(pred_action[:, :, [0, 1, 2]], gt_action[:, :, [0, 1, 2]]) * self.config.XYZ_SCALE
+        if "rpy" in self.action_type:
+            rot_loss = self.mse(pred_action[:, :, [3, 4, 5]], gt_action[:, :, [3, 4, 5]]) * self.config.ROT_SCALE
+        elif "ort6d" in self.action_type:
+            rot_loss = self.mse(pred_action[:, :, [3, 4, 5, 6, 7, 8]], gt_action[:, :, [3, 4, 5, 6, 7, 8]]) * self.config.ROT_SCALE
+        else:
+            rot_loss = 0.0
+        loss = gripper_loss + position_loss + rot_loss
+        # else:
+        #     org_action_dim = full_action_dim // 2
+        #     left_gripper_loss = self.bce(pred_action[:, :, org_action_dim], gt_action[:, :, org_action_dim]) * self.config.GRIPPER_SCALE
+        #     right_gripper_loss = self.bce(pred_action[:, :, org_action_dim * 2], gt_action[:, :, org_action_dim * 2]) * self.config.GRIPPER_SCALE
+        #     gripper_loss = left_gripper_loss + right_gripper_loss
+            
+        #     left_pos_id = [0, 1, 2]
+        #     right_pos_id = []
+        #     for id in left_pos_id:
+        #         right_pos_id.append(id + org_action_dim)
+        #     left_position_loss = self.mse(pred_action[:, :, left_pos_id], gt_action[:, :, left_pos_id]) * self.config.XYZ_SCALE
+        #     right_position_loss = self.mse(pred_action[:, :, right_pos_id], gt_action[:, :, right_pos_id]) * self.config.XYZ_SCALE
+        #     position_loss = left_position_loss + right_position_loss
+            
+        #     left_rot_id = [4, 5, 6]
+        #     right_rot_id = []
+        #     for id in left_rot_id:
+        #         right_rot_id.append(id + org_action_dim)
+        #     left_rot_loss = self.mse(pred_action[:, :, left_rot_id], gt_action[:, :, left_rot_id]) * self.config.ROT_SCALE
+        #     right_rot_loss = self.mse(pred_action[:, :, right_rot_id], gt_action[:, :, right_rot_id]) * self.config.ROT_SCALE
+        #     rot_loss = left_rot_loss + right_rot_loss
+        #     loss = (gripper_loss + position_loss + rot_loss) / 2
+        # print(f"gripper loss:{gripper_loss.item()}, position loss:{position_loss.item()} rot loss:{rot_loss.item()}")
+        return loss
+        
+    
+    def forward(self, images, img_masks, tokens, masks, actions, noise=None, time=None) -> Tensor:
+        """Do a full training forward pass and compute the loss."""
+        if noise is None:
+            noise = self.sample_noise(actions.shape, actions.device)
+
+        if time is None:
+            if "pi0_time" in self.action_type:
+                time = self.sample_time(actions.shape[0], actions.device) # 0-1
+            else:
+                time = self.time_sampler.sample_t(actions.shape[0])
+                time = time.to(device=actions.device, dtype=self.dtype)
+                sigma_min = self.time_sampler.sigma_min   # 0.01
+                sigma_max = self.time_sampler.sigma_max   # 200
+
+                time = time.clamp(sigma_min, sigma_max)
+
+                time = (torch.log(time) - math.log(sigma_min)) / (
+                    math.log(sigma_max) - math.log(sigma_min)
+                )
+            # print(time)
+
+        time_expanded = time[:, None, None]
+        x_t = time_expanded * noise + (1 - time_expanded) * actions
+        u_t = noise - actions
+
+        prefix_embs, prefix_pad_masks, prefix_att_masks = self.embed_prefix(images, img_masks, tokens, masks)
+        suffix_embs, suffix_pad_masks, suffix_att_masks, adarms_cond = self.embed_suffix(x_t, time)
+
+        if (
+            self.paligemma_with_expert.paligemma.language_model.layers[0].self_attn.q_proj.weight.dtype
+            == torch.bfloat16
+        ):
+            suffix_embs = suffix_embs.to(dtype=torch.bfloat16)
+            prefix_embs = prefix_embs.to(dtype=torch.bfloat16)
+
+        pad_masks = torch.cat([prefix_pad_masks, suffix_pad_masks], dim=1)
+        att_masks = torch.cat([prefix_att_masks, suffix_att_masks], dim=1)
+
+        att_2d_masks = make_att_2d_masks(pad_masks, att_masks)
+        position_ids = torch.cumsum(pad_masks, dim=1) - 1
+
+        att_2d_masks_4d = self._prepare_attention_masks_4d(att_2d_masks)
+
+        def forward_func(prefix_embs, suffix_embs, att_2d_masks_4d, position_ids, adarms_cond):
+            (_, suffix_out), _ = self.paligemma_with_expert.forward(
+                attention_mask=att_2d_masks_4d,
+                position_ids=position_ids,
+                past_key_values=None,
+                inputs_embeds=[prefix_embs, suffix_embs],
+                use_cache=False,
+                adarms_cond=[None, adarms_cond],
+            )
+            return suffix_out
+
+        suffix_out = self._apply_checkpoint(
+            forward_func, prefix_embs, suffix_embs, att_2d_masks_4d, position_ids, adarms_cond
+        )
+
+        suffix_out = suffix_out[:, -self.config.chunk_size :]
+        # suffix_out = suffix_out.to(dtype=torch.float32)
+
+        def action_out_proj_func(suffix_out):
+            return self.action_out_proj(suffix_out)
+
+        v_t = self._apply_checkpoint(action_out_proj_func, suffix_out)
+        
+        v_t = v_t.to(dtype=torch.float32)
+        u_t = u_t.to(dtype=torch.float32)
+        if self.loss_type == "xvla_loss":
+            pred_actions = noise - v_t
+            pred_actions = pred_actions.to(dtype=torch.float32)
+            actions = actions.to(dtype=torch.float32)
+            return self.xvla_loss(actions, pred_actions)
+        return F.mse_loss(u_t, v_t, reduction="none")
+
+    @torch.no_grad()  # see openpi `sample_actions` (slightly adapted)
+    def sample_actions(self, images, img_masks, tokens, masks, noise=None, num_steps=None) -> Tensor:
+        """Do a full inference forward and compute the action."""
+        if num_steps is None:
+            num_steps = self.config.num_inference_steps
+
+        bsize = tokens.shape[0]
+        device = tokens.device
+
+        if noise is None:
+            # Sample noise with padded dimension as expected by action_in_proj
+            actions_shape = (
+                bsize,
+                self.config.chunk_size,
+                self.config.max_action_dim,
+            )  # Use config max_action_dim for internal processing
+            noise = self.sample_noise(actions_shape, device)
+
+        prefix_embs, prefix_pad_masks, prefix_att_masks = self.embed_prefix(images, img_masks, tokens, masks)
+        prefix_att_2d_masks = make_att_2d_masks(prefix_pad_masks, prefix_att_masks)
+        prefix_position_ids = torch.cumsum(prefix_pad_masks, dim=1) - 1
+
+        prefix_att_2d_masks_4d = self._prepare_attention_masks_4d(prefix_att_2d_masks)
+        self.paligemma_with_expert.paligemma.language_model.config._attn_implementation = "eager"  # noqa: SLF001
+
+        _, past_key_values = self.paligemma_with_expert.forward(
+            attention_mask=prefix_att_2d_masks_4d,
+            position_ids=prefix_position_ids,
+            past_key_values=None,
+            inputs_embeds=[prefix_embs, None],
+            use_cache=True,
+        )
+
+        dt = -1.0 / num_steps
+        dt = torch.tensor(dt, dtype=torch.float32, device=device)
+
+        x_t = noise
+        time = torch.tensor(1.0, dtype=torch.float32, device=device)
+        while time >= -dt / 2:
+            expanded_time = time.expand(bsize)
+            v_t = self.denoise_step(
+                prefix_pad_masks,
+                past_key_values,
+                x_t,
+                expanded_time,
+            )
+            x_t = x_t + dt * v_t
+            time += dt
+
+        return x_t
+
+    def denoise_step(
+        self,
+        prefix_pad_masks,
+        past_key_values,
+        x_t,
+        timestep,
+    ):
+        """Apply one denoising step of the noise `x_t` at a given timestep."""
+        suffix_embs, suffix_pad_masks, suffix_att_masks, adarms_cond = self.embed_suffix(x_t, timestep)
+
+        suffix_len = suffix_pad_masks.shape[1]
+        batch_size = prefix_pad_masks.shape[0]
+        prefix_len = prefix_pad_masks.shape[1]
+
+        prefix_pad_2d_masks = prefix_pad_masks[:, None, :].expand(batch_size, suffix_len, prefix_len)
+        suffix_att_2d_masks = make_att_2d_masks(suffix_pad_masks, suffix_att_masks)
+        full_att_2d_masks = torch.cat([prefix_pad_2d_masks, suffix_att_2d_masks], dim=2)
+
+        prefix_offsets = torch.sum(prefix_pad_masks, dim=-1)[:, None]
+        position_ids = prefix_offsets + torch.cumsum(suffix_pad_masks, dim=1) - 1
+
+        full_att_2d_masks_4d = self._prepare_attention_masks_4d(full_att_2d_masks)
+        self.paligemma_with_expert.gemma_expert.model.config._attn_implementation = "eager"  # noqa: SLF001
+
+        outputs_embeds, _ = self.paligemma_with_expert.forward(
+            attention_mask=full_att_2d_masks_4d,
+            position_ids=position_ids,
+            past_key_values=past_key_values,
+            inputs_embeds=[None, suffix_embs],
+            use_cache=False,
+            adarms_cond=[None, adarms_cond],
+        )
+
+        suffix_out = outputs_embeds[1]
+        suffix_out = suffix_out[:, -self.config.chunk_size :]
+        # suffix_out = suffix_out.to(dtype=torch.float32)
+        return self.action_out_proj(suffix_out)

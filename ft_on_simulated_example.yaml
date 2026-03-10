@@ -1,0 +1,107 @@
+description: This is an example configuration file for submitting jobs to Singularity
+
+env_defaults:
+  NODES: 1 # The number of nodes you want to use
+  GPUS: 8 # number of gpus per node
+  MEM: 40 # gpu memory of each gpu, not important
+  JOB_NAME: 0309-pi05-cup
+  #下次提交改成0205-pi05-cup
+
+target:
+  service: sing # for singularity, no need to change
+  workspace_name: wsgcrrbt # our workspace to use singularity, no need to change
+  name: msrresrchvc  # change for different kinds of gpus. The detailed quota can be checked with command "amlt ti sing -v"
+  # group_policy_name: halo_dexter
+# palisades05
+# msroctovc
+# msrresrchvc
+# msroctobasicvc
+# msrresrchbasicvc
+#
+
+storage: # mount the storage container
+  my_output:
+    storage_account_name: azsussc
+    container_name: v-wangxiaofa
+    mount_dir: /mnt/wangxiaofa/robot_dataset/lerobot-format/cup_hz_4_plus_1103
+  data:
+    storage_account_name: azsussc
+    container_name: v-wenhuitan
+    mount_dir: /mnt/robotdata
+    is_output: false
+
+environment: # select the image, clone your code, install the packages
+  image: amlt-sing/acpt-torch2.7.1-py3.10-cuda12.6-ubuntu22.04
+  # image: base/job/pytorch/acpt-2.1.2-cuda11.8:20240320T154353549
+  setup:
+    # - pip install torch torchvision
+    # - pip install torch==2.1.2 torchvision==0.16.2 torchaudio==2.1.2 --index-url https://download.pytorch.org/whl/cu118
+    # - git clone https://github.com/lzl2040/gcr_lerobot_1.git && cd gcr_lerobot_1
+    - cd gcr_lerobot_1
+    # - pip install -e ".[pi0]"
+    # - pip install accelerate pytest deepspeed polars
+    # # - pip install transformers==4.49.0
+    # - pip install datasets==3.6.0
+    # - pip install peft
+    # - pip install numpy==1.26.4
+    - conda init
+    - conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
+    - conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
+    - conda create -n lerobot python==3.11 -y
+    - conda run --name lerobot conda install ffmpeg==7.1.1 -c conda-forge -y
+    - conda run --name lerobot which python
+    - conda run --name lerobot which pip
+    - conda run --name lerobot pip install -e ".[pi0]"
+    - conda run --name lerobot pip install accelerate pytest deepspeed polars
+    - conda run --name lerobot pip install datasets==4.0.0
+    - conda run --name lerobot pip install termcolor
+    - conda run --name lerobot pip install transformers==4.56.0
+    - conda run --name lerobot pip install numpy==1.26.4
+    # - pip install torch==2.4.1 torchvision==0.21.0
+  # registry: singularitybase.azurecr.io # cached base images under amlt-sing/* seems not usable now, use singularitybase instead
+
+code:
+  local_dir: $CONFIG_DIR/
+
+data:
+  storage_id: my_output
+
+jobs:
+  # - name: pipi05-latent-abstudy-wo-decoupled-token-1112-ft-simpler-bridge-1st
+  - name: $JOB_NAME # the job name you will see on the portal. Though not important, you'd better carefully set it for clarity.
+  # - name: pipi0-1105-ft-american-w-state-1st
+    sku: ${NODES}x${MEM}G${GPUS}-A100 # determinate the GPU you will use, please refer to the official docs for more information
+    # sku: ${NODES}x${MEM}G${GPUS}-A100-IB # determinate the GPU you will use, please refer to the official docs for more information
+    process_count_per_node: ${GPUS} # usually 1
+    sla_tier: Premium # Premium, Standard, Basic. corresponding to the priority.
+    execution_mode: basic
+    identity: managed
+    submit_args:
+      env:
+        AMLT_DOCKERFILE_TEMPLATE: default
+        _AZUREML_SINGULARITY_JOB_UAI: /subscriptions/3289a5dd-b901-4b63-9562-bbbdfffba9de/resourcegroups/ws/providers/Microsoft.ManagedIdentity/userAssignedIdentities/wsgcrrbt-identity
+        SHARED_MEMORY_PERCENT: 0.5 # value in [0,1], change if necessary, shared memory size
+
+    command:
+      - ls
+      - cd gcr_lerobot_1
+      # pizza_long_full_hz_2.5, american_data, cup_1, cup_2, cup_2.5hz, simpler_fractal
+      # finetune_on_40G: pizza
+      # finetune_new_data_80G: cup, block, sauce
+      - pip install termcolor transformers==4.56.0 accelerate diffusers tiktoken sentencepiece lerobot
+      - bash ./run_local.sh
+      #- conda run --name lerobot bash finetune_new_data.sh --use_state true --job_name $JOB_NAME --data_mix "cup_hz_4_plus_1103" --log_dir "logs" --log_freq 20 --model_type "pi05" --train_expert_only false --freeze_vision false --img_aug false --loss_type "xvla_loss" --wandb.enable true --warm_up_steps 1000 --decay_steps 60000 --save_freq 6000 --add_new_tokens false --use_new_tokens false --action_type "ort6d_new_time" --pt_path "/mnt/wangxiaofa/pi0_05/pi05_base/model_new.pt"
+      
+      # for not 17-dim data, such as pizza_long
+      # - conda run --name lerobot bash finetune_on_40G.sh --use_state true --job_name $JOB_NAME --data_mix "pizza_long_sub4_hz_4" --model_type "pi05" --train_expert_only false --freeze_vision false --img_aug false --loss_type "xvla_loss" --warm_up_steps 1000 --decay_steps 60000 --save_freq 8000 --add_new_tokens true --use_new_tokens false --pt_path "/mnt/wangxiaofa/latent_action_exp/1031_distill_pi05_oxe_minus/step70000.pt"
+      # for 17-dim data, such as cup
+      # - conda run --name lerobot bash finetune_new_data.sh --use_state true --job_name $JOB_NAME --data_mix "pizza_long_sub4_hz_4" --model_type "pi05" --train_expert_only false --freeze_vision false --img_aug false --loss_type "xvla_loss" --warm_up_steps 1000 --decay_steps 30000 --save_freq 4000 --add_new_tokens true --use_new_tokens false --project_name "pi05-ft-simulated" --pt_path "/mnt/wangxiaofa/latent_action_exp/1031_distill_pi05_oxe_minus/step70000.pt"
+      # - conda run --name lerobot bash finetune_new_data_80G.sh --use_state true --job_name "1113-pi05-pizza-sub2-fewshot10-w-state" --data_mix "pizza_sub2_fs_10" --model_type "pi0" --train_expert_only false --freeze_vision false --loss_type "xvla_loss" --warm_up_steps 1000 --decay_steps 30000 --save_freq 2000 --add_new_tokens false --pt_path "/mnt/wangxiaofa/pi0_pretrain/model.pt"
+      # - bash merge_lora.sh
+      # - bash finetune_accelerator.sh
+      # - bash finetune.sh
+      # - python -c "import time; time.sleep(14*24*60*60)" # sleep for two weeks
+      # Below is an example for distributed pytorch training. Arguments for torchrun are no need to change.
+      # ATTENTION: DO NOT directly run this code since it will actually influence my resources. Change configs to make sure you "write" actions are only done in your storage container.
+      # - cd vla
+      # - torchrun --nproc_per_node=$GPUS --nnode=$NODES --node_rank=$$AZUREML_CR_NODE_RANK --master_addr=$$AZ_BATCHAI_JOB_MASTER_NODE_IP --master_port=9901  scripts/train.py configs/mistral/config_zero3_visionFirst_vaFeat.yaml
