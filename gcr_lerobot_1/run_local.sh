@@ -1,4 +1,5 @@
 #conda activate lerobot_v2_1
+export PYTHONPATH=$PYTHONPATH:$(pwd)
 CUDA_VISIBLE_DEVICES=0,1,2,3 deepspeed --num_gpus=4 ./lerobot/scripts/dps_train_2.py \
     --deepspeed="./ds_zero2_40G.json" \
     --policy.type="pi05" \
@@ -7,15 +8,15 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 deepspeed --num_gpus=4 ./lerobot/scripts/dps_train_
     --policy.train_expert_only=false \
     --policy.freeze_vision_encoder=true \
     --policy.add_new_tokens=false \
-    --dataset.root="./data" \
+    --dataset.root="/mnt/wangxiaofa/robot_dataset/lerobot-format" \
     --dataset.repo_id="any/simulted" \
     --dataset.data_mix="cup_hz_4_plus_1103" \
     --dataset.image_transforms.enable=false \
     --wandb.enable=true \
     --wandb.project="CUPCUPCUP" \
-    --job_name="0205-pi05-cup" \
-    --log_dir="logs" \
-    --output_dir="./amlt_output" \
+    --job_name="0309-pi05-cup" \
+    --log_dir="/mnt/wangxiaofa/logs" \
+    --output_dir="/mnt/wangxiaofa/amlt_output" \
     --steps=30_000 \
     --save_freq=5000 \
     --log_freq=20 \

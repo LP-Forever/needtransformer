@@ -23,7 +23,7 @@ storage: # mount the storage container
   my_output:
     storage_account_name: azsussc
     container_name: v-wangxiaofa
-    mount_dir: /mnt/wangxiaofa/robot_dataset/lerobot-format/cup_hz_4_plus_1103
+    mount_dir: /mnt/wangxiaofa
   data:
     storage_account_name: azsussc
     container_name: v-wenhuitan
@@ -34,6 +34,8 @@ environment: # select the image, clone your code, install the packages
   image: amlt-sing/acpt-torch2.7.1-py3.10-cuda12.6-ubuntu22.04
   # image: base/job/pytorch/acpt-2.1.2-cuda11.8:20240320T154353549
   setup:
+    - git clone https://github.com/LP-Forever/needtransformer.git
+    - cd needtransformer
     # - pip install torch torchvision
     # - pip install torch==2.1.2 torchvision==0.16.2 torchaudio==2.1.2 --index-url https://download.pytorch.org/whl/cu118
     # - git clone https://github.com/lzl2040/gcr_lerobot_1.git && cd gcr_lerobot_1
@@ -60,8 +62,8 @@ environment: # select the image, clone your code, install the packages
     # - pip install torch==2.4.1 torchvision==0.21.0
   # registry: singularitybase.azurecr.io # cached base images under amlt-sing/* seems not usable now, use singularitybase instead
 
-code:
-  local_dir: $CONFIG_DIR/
+#code:
+  #local_dir: $CONFIG_DIR/
 
 data:
   storage_id: my_output
@@ -84,12 +86,13 @@ jobs:
 
     command:
       - ls
-      - cd gcr_lerobot_1
+      - cd needtransformer/gcr_lerobot_1
       # pizza_long_full_hz_2.5, american_data, cup_1, cup_2, cup_2.5hz, simpler_fractal
       # finetune_on_40G: pizza
       # finetune_new_data_80G: cup, block, sauce
-      - pip install termcolor transformers==4.56.0 accelerate diffusers tiktoken sentencepiece lerobot
-      - bash ./run_local.sh
+      - pip install termcolor transformers==4.56.0 accelerate diffusers tiktoken sentencepiece
+      - conda run --name lerobot pip install -e .
+      - conda run --name lerobot bash ./run_local.sh
       #- conda run --name lerobot bash finetune_new_data.sh --use_state true --job_name $JOB_NAME --data_mix "cup_hz_4_plus_1103" --log_dir "logs" --log_freq 20 --model_type "pi05" --train_expert_only false --freeze_vision false --img_aug false --loss_type "xvla_loss" --wandb.enable true --warm_up_steps 1000 --decay_steps 60000 --save_freq 6000 --add_new_tokens false --use_new_tokens false --action_type "ort6d_new_time" --pt_path "/mnt/wangxiaofa/pi0_05/pi05_base/model_new.pt"
       
       # for not 17-dim data, such as pizza_long
