@@ -212,8 +212,8 @@ class PI05Policy(PreTrainedPolicy):
 
         # tokenizer_path = "/Data/lzl/huggingface/paligemma-3b-pt-224"
         # tokenizer_path = "/mnt/wangxiaofa/RDT_module_params/paligemma-3b-pt-224/"
-        # 使用本地文件，按需改动
-        tokenizer_path = "/home/v-wangxiaofa/amlt_jobs/models/paligemma-3b-pt-224/google/paligemma-3b-pt-224"
+        # huggingface文件，按需改动
+        tokenizer_path = "google/paligemma-3b-pt-224"
         self.language_tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
 
         #self.language_tokenizer = AutoTokenizer.from_pretrained(

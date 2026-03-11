@@ -24,7 +24,6 @@ python -m lerobot.scripts.dps_train_2 \
     --save_freq=5000 \
     --log_freq=20 \
     --policy.pt_weight_path="./model_new.pt" \
-    --policy.pretrained_path="google/paligemma-3b-pt-224"
     # --policy.pt_weight_path="/Data/lzl/weights/pi_zero_pt/model.pt" \
     # --policy.pretrained_path=""/Data/lzl/pi0-ft-real/1124-latent-pi05-ft-real/step30000/mp_rank_00_model_states.pt"
     # --dataset.image_transforms.enable=true
