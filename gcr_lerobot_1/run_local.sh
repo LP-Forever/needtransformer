@@ -2,7 +2,8 @@
 #export MASTER_PORT=$(shuf -i 20000-60000 -n 1)
 export PYTHONPATH=$PYTHONPATH:$(pwd)
 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 \
-    python -m deepspeed.launcher.launch --num_gpus=8 --master_port=29500 ./lerobot/scripts/dps_train_2.py \
+    #python -m deepspeed.launcher.launch --num_gpus=8 --master_port=29500 ./lerobot/scripts/dps_train_2.py \
+python -m lerobot.scripts.dps_train_2 \
     --deepspeed="./ds_zero2_40G.json" \
     --policy.type="pi05" \
     --policy.use_lora=true \
