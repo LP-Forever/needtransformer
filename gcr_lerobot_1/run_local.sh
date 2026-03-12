@@ -23,7 +23,8 @@ python -m lerobot.scripts.dps_train_2 \
     --steps=60 \
     --save_freq=20 \
     --log_freq=2 \
-    --policy.pt_weight_path="/scratch/amlt_code/model_new.pt" \
+    --policy.pt_weight_path="/mnt/wangxiaofa/pi0_05/pi05_base/model_new.pt"
+    # --policy.pt_weight_path="/scratch/amlt_code/model_new.pt" \
     # --policy.pt_weight_path="/Data/lzl/weights/pi_zero_pt/model.pt" \
     # --policy.pretrained_path=""/Data/lzl/pi0-ft-real/1124-latent-pi05-ft-real/step30000/mp_rank_00_model_states.pt"
     # --dataset.image_transforms.enable=true
