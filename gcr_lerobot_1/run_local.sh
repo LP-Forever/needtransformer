@@ -17,12 +17,12 @@ python -m lerobot.scripts.dps_train_2 \
     --dataset.image_transforms.enable=false \
     --wandb.enable=true \
     --wandb.project="CUPCUPCUP" \
-    --job_name="0311-pi05-cup" \
+    --job_name="0312-pi05-cup-submitat1704" \
     --log_dir="/mnt/wangxiaofa/logs" \
-    --output_dir="/mnt/wangxiaofa/amlt_output" \
-    --steps=60 \
-    --save_freq=20 \
-    --log_freq=2 \
+    --output_dir="/mnt/wangxiaofa/amlt_output/20260312_1704" \
+    --steps=60000 \
+    --save_freq=10000 \
+    --log_freq=40 \
     --policy.pt_weight_path="/mnt/wangxiaofa/pi0_05/pi05_base/model_new.pt"
     # --policy.pt_weight_path="/scratch/amlt_code/model_new.pt" \
     # --policy.pt_weight_path="/Data/lzl/weights/pi_zero_pt/model.pt" \
