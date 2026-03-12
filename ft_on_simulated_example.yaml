@@ -4,12 +4,12 @@ env_defaults:
   NODES: 1 # The number of nodes you want to use
   GPUS: 8 # number of gpus per node
   MEM: 40 # gpu memory of each gpu, not important
-  JOB_NAME: 0312-pi05-cup-submitat1704
+  JOB_NAME: 0312-pi05-pizza-submitat1800
 
 target:
   service: sing # for singularity, no need to change
   workspace_name: wsgcrrbt # our workspace to use singularity, no need to change
-  name: palisades32  # change for different kinds of gpus. The detailed quota can be checked with command "amlt ti sing -v"
+  name: msrresrchvc  # change for different kinds of gpus. The detailed quota can be checked with command "amlt ti sing -v"
   # group_policy_name: halo_dexter
 # palisades05
 # msroctovc
