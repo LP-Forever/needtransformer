@@ -5,7 +5,6 @@ env_defaults:
   GPUS: 8 # number of gpus per node
   MEM: 40 # gpu memory of each gpu, not important
   JOB_NAME: 0312-pi05-cup-submitat1704
-  #下次提交改成0205-pi05-cup
 
 target:
   service: sing # for singularity, no need to change
