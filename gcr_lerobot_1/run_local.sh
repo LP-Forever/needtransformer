@@ -19,10 +19,10 @@ python -m lerobot.scripts.dps_train_2 \
     --wandb.project="CUPCUPCUP" \
     --job_name="0309-pi05-cup" \
     --log_dir="/mnt/wangxiaofa/logs" \
-    --output_dir="/mnt/wangxiaofa/amlt_output" \
-    --steps=30_000 \
-    --save_freq=5000 \
-    --log_freq=20 \
+    --output_dir="/mnt/wangxiaofa/amlt_output/test_IO" \
+    --steps=200 \
+    --save_freq=100 \
+    --log_freq=4 \
     --policy.pt_weight_path="/scratch/amlt_code/model_new.pt" \
     # --policy.pt_weight_path="/Data/lzl/weights/pi_zero_pt/model.pt" \
     # --policy.pretrained_path=""/Data/lzl/pi0-ft-real/1124-latent-pi05-ft-real/step30000/mp_rank_00_model_states.pt"
