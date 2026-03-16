@@ -17,9 +17,9 @@ python -m lerobot.scripts.dps_train_2 \
     --dataset.image_transforms.enable=false \
     --wandb.enable=true \
     --wandb.project="CUPCUPCUP" \
-    --job_name="0313-pi05-pizza-submitat1346" \
+    --job_name="0316-pi05-pizza-submitat1810" \
     --log_dir="/mnt/wangxiaofa/logs" \
-    --output_dir="/mnt/wangxiaofa/amlt_output/pizza_20260313-1346" \
+    --output_dir="/mnt/wangxiaofa/amlt_output/pizza_20260316-1810" \
     --steps=60000 \
     --save_freq=10000 \
     --log_freq=40 \
