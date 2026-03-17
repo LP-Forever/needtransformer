@@ -5,7 +5,7 @@ CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 \
     #python -m deepspeed.launcher.launch --num_gpus=8 --master_port=29500 ./lerobot/scripts/dps_train_2.py \
 python -m lerobot.scripts.dps_train_2 \
     --deepspeed="./ds_zero2_40G.json" \
-    --policy.type="pi05" \
+    --policy.type="pi0" \
     --policy.use_lora=true \
     --policy.loss_type="mse_loss" \
     --policy.train_expert_only=false \
@@ -13,17 +13,17 @@ python -m lerobot.scripts.dps_train_2 \
     --policy.add_new_tokens=false \
     --dataset.root="/mnt/wangxiaofa/robot_dataset/lerobot-format" \
     --dataset.repo_id="any/simulted" \
-    --dataset.data_mix="pizza_long_sub4_hz_4_ua" \
+    --dataset.data_mix="cup_hz_4_plus_1103" \
     --dataset.image_transforms.enable=false \
     --wandb.enable=true \
     --wandb.project="CUPCUPCUP" \
-    --job_name="0316-pi05-pizza-submitat1810" \
+    --job_name="0317-pi0-cup-submitat1810" \
     --log_dir="/mnt/wangxiaofa/logs" \
-    --output_dir="/mnt/wangxiaofa/amlt_output/pizza_20260316-1810" \
+    --output_dir="/mnt/wangxiaofa/amlt_output/cup_20260317-1912" \
     --steps=60000 \
     --save_freq=10000 \
     --log_freq=40 \
-    --policy.pt_weight_path="/mnt/wangxiaofa/pi0_05/pi05_base/model_new.pt"
+    --policy.pt_weight_path="/mnt/wangxiaofa/pi0_pretrain/model_new.pt"
     # --policy.pt_weight_path="/scratch/amlt_code/model_new.pt" \
     # --policy.pt_weight_path="/Data/lzl/weights/pi_zero_pt/model.pt" \
     # --policy.pretrained_path=""/Data/lzl/pi0-ft-real/1124-latent-pi05-ft-real/step30000/mp_rank_00_model_states.pt"

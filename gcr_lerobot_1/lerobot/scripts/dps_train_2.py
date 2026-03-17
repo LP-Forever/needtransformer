@@ -140,9 +140,7 @@ def train(cfg: TrainPipelineConfig):
     cfg.validate()
     
     # Initialize DeepSpeed
-    deepspeed.init_distributed(
-        timeout=datetime.timedelta(seconds=7200)
-    )
+    deepspeed.init_distributed()
     logger = init_logger(cfg)
     
     # image_transforms = (
