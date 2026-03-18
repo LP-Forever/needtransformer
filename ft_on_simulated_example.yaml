@@ -4,7 +4,7 @@ env_defaults:
   NODES: 1 # The number of nodes you want to use
   GPUS: 8 # number of gpus per node
   MEM: 40 # gpu memory of each gpu, not important
-  JOB_NAME: 0317-pi0-cup-submitat1912
+  JOB_NAME: 0318-pi0-cup-submitat1652
 
 target:
   service: sing # for singularity, no need to change

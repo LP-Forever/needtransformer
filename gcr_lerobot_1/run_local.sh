@@ -17,10 +17,10 @@ python -m lerobot.scripts.dps_train_2 \
     --dataset.image_transforms.enable=false \
     --wandb.enable=true \
     --wandb.project="CUPCUPCUP" \
-    --job_name="0317-pi0-cup-submitat1810" \
+    --job_name="0318-pi0-cup-submitat1652" \
     --log_dir="/mnt/wangxiaofa/logs" \
-    --output_dir="/mnt/wangxiaofa/amlt_output/cup_20260317-1912" \
-    --steps=60000 \
+    --output_dir="/mnt/wangxiaofa/amlt_output/cup_20260318-1652" \
+    --steps=50000 \
     --save_freq=10000 \
     --log_freq=40 \
     --policy.pt_weight_path="/mnt/wangxiaofa/pi0_pretrain/model_new.pt"
