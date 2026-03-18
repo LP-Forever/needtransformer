@@ -85,6 +85,7 @@ class PI0Config(PreTrainedConfig):
     scheduler_decay_lr: float = 2.5e-6
 
     # TODO: Add EMA
+    action_type: str = "rpy"
 
     def __post_init__(self):
         super().__post_init__()
