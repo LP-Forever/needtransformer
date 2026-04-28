@@ -210,7 +210,7 @@ class PaliGemmaWithExpertModel(PreTrainedModel):
         self.paligemma = self.paligemma.to(dtype=torch.bfloat16)
 
         params_to_change_dtype = [
-            "language_model.model.layers",
+            "language_model.layers",
             "gemma_expert.model.layers",
             "vision_tower",
             "multi_modal",
@@ -223,8 +223,8 @@ class PaliGemmaWithExpertModel(PreTrainedModel):
         return self.paligemma.get_image_features(image)
 
     def embed_language_tokens(self, tokens: torch.Tensor):
-        # return self.paligemma.language_model.embed_tokens(tokens)
-        return self.paligemma.language_model.model.embed_tokens(tokens)
+        return self.paligemma.language_model.embed_tokens(tokens)
+        # return self.paligemma.language_model.model.embed_tokens(tokens)
 
     # TODO: break down this huge forward into modules or functions
     def forward(
@@ -236,7 +236,7 @@ class PaliGemmaWithExpertModel(PreTrainedModel):
         use_cache: Optional[bool] = None,
         fill_kv_cache: Optional[bool] = None,
     ):
-        models = [self.paligemma.language_model.model, self.gemma_expert.model]
+        models = [self.paligemma.language_model, self.gemma_expert.model]
 
         for hidden_states in inputs_embeds:
             # TODO this is very inefficient
