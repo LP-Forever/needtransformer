@@ -4,12 +4,12 @@ env_defaults:
   NODES: 1 # The number of nodes you want to use
   GPUS: 8 # number of gpus per node
   MEM: 40 # gpu memory of each gpu, not important
-  JOB_NAME: 0318-pi0-cup-submitat1652
+  JOB_NAME: 0428-pi05-sauce-submitat1804
 
 target:
   service: sing # for singularity, no need to change
   workspace_name: wsgcrrbt # our workspace to use singularity, no need to change
-  name: palisades32  # change for different kinds of gpus. The detailed quota can be checked with command "amlt ti sing -v"
+  name: palisades33  # change for different kinds of gpus. The detailed quota can be checked with command "amlt ti sing -v"
   # group_policy_name: halo_dexter
 # palisades05
 # msroctovc
@@ -36,6 +36,7 @@ environment: # select the image, clone your code, install the packages
   setup:
     - git clone https://github.com/LP-Forever/needtransformer.git
     - cd needtransformer
+    - git checkout 1adf705981d52e7889e36e823e1c78137e2897ee
     # - pip install torch torchvision
     # - pip install torch==2.1.2 torchvision==0.16.2 torchaudio==2.1.2 --index-url https://download.pytorch.org/whl/cu118
     # - git clone https://github.com/lzl2040/gcr_lerobot_1.git && cd gcr_lerobot_1
@@ -95,6 +96,7 @@ jobs:
       - ls
       - pwd
       - cd needtransformer/gcr_lerobot_1
+      
       # pizza_long_full_hz_2.5, american_data, cup_1, cup_2, cup_2.5hz, simpler_fractal
       # finetune_on_40G: pizza
       # finetune_new_data_80G: cup, block, sauce
