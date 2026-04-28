@@ -13,13 +13,13 @@ python -m lerobot.scripts.dps_train_2 \
     --policy.add_new_tokens=false \
     --dataset.root="/mnt/wangxiaofa/robot_dataset/lerobot-format" \
     --dataset.repo_id="any/simulted" \
-    --dataset.data_mix="pizza_long_sub4_hz_4_ua" \
+    --dataset.data_mix="sauce_hz_4" \
     --dataset.image_transforms.enable=false \
     --wandb.enable=true \
-    --wandb.project="CUPCUPCUP" \
-    --job_name="0316-pi05-pizza-submitat1810" \
+    --wandb.project="NEW-pi05" \
+    --job_name="0428-pi05-sauce-submitat1804" \
     --log_dir="/mnt/wangxiaofa/logs" \
-    --output_dir="/mnt/wangxiaofa/amlt_output/pizza_20260316-1810" \
+    --output_dir="/mnt/wangxiaofa/amlt_output/sauce-0428-1804" \
     --steps=60000 \
     --save_freq=10000 \
     --log_freq=40 \
