@@ -1,50 +1,57 @@
 #!/bin/bash
 # =============================================================================
-# Cosmos-Policy Training Script for dataset_cup (cup_4hz)
+# Cosmos-Policy Training Script for dataset_cup (run on amlt cloud)
 # =============================================================================
+
+# 确保 uv 在 PATH 中（amlt setup 阶段安装的，但 command 阶段 PATH 不会继承）
+export PATH="$HOME/.local/bin:$PATH"
 
 # --------------------------- 可配置参数 --------------------------------------
 
 # 分布式训练
-NNODES=1                          # 节点数
-NPROC_PER_NODE=2                  # 每节点 GPU 数
-NODE_RANK=0                       # 当前节点 rank（多节点时修改）
-MASTER_ADDR="127.0.0.1"          # 多节点主节点地址
-MASTER_PORT=29500                 # 多节点通信端口
+NNODES=1
+NPROC_PER_NODE=8                  # 云端 A100 x8
+NODE_RANK=0
+MASTER_ADDR="127.0.0.1"
+MASTER_PORT=29500
 
 # 数据
-DATA_MIX="cup_4hz"                # 数据集 mixture 名（对应 mixtures.py 中的定义）
-STAGE="finetune"                  # 训练阶段: "finetune" 或 "pretrain"
-MAX_ACTION_DIM=17                 # action 维度（cup 数据集为 17 维）
-MAX_STATE_DIM=17                  # state 维度（cup 数据集为 17 维）
-DATASET_LEN=5000_0000             # pretrain 模式下每个 epoch 的采样量（finetune 模式忽略此参数）
-PARENT_DIR="/home/v-wenhuitan/franka-action/cosmos-policy/dataset_cup"
-
+DATA_MIX="cup_4hz"
+STAGE="finetune"
+MAX_ACTION_DIM=17
+MAX_STATE_DIM=17
+DATASET_LEN=5000_0000
+PARENT_DIR="/mnt/wangxiaofa/robot_dataset/lerobot-format"
 
 # 训练
-BATCH_SIZE=4                      # 每 GPU 的 batch size
-ACC_STEP=2                        # 梯度累积步数（等效 batch = BATCH_SIZE * ACC_STEP * NPROC_PER_NODE）
-MAX_ITER=30000                    # 最大训练步数
-SAVE_ITER=5000                    # 每多少步保存 checkpoint
-LOGGING_ITER=5                    # 每多少步打印一次 loss
+BATCH_SIZE=4
+ACC_STEP=1                        # 8 GPU x 4 batch x 1 acc = 32 effective
+MAX_ITER=30000
+SAVE_ITER=5000
+LOGGING_ITER=5
 
 # 学习率与调度
-LR=1e-4                           # 学习率
-SCHEDULER_CYCLE_LENGTHS=30000     # 第一个 cycle 的步数
-SCHEDULER_WARM_UP_STEPS=1000      # warmup 步数
+LR=1e-4
+SCHEDULER_CYCLE_LENGTHS=30000
+SCHEDULER_WARM_UP_STEPS=1000
+
+# 预训练模型路径（amlt 提交时放在 $AMLT_CODE_DIR/cosmos_pretrained/ 下）
+CODE_DIR=${AMLT_CODE_DIR:-$PWD}
+COSMOS_PRETRAINED="${CODE_DIR}/cosmos_pretrained/model-480p-16fps.pt"
+T5_EMBEDDINGS="${CODE_DIR}/cosmos_pretrained/t5_embeddings_cup_4hz.pkl"
 
 # WandB
-WANDB_MODE="online"               # "online"=上传云端, "offline"=本地记录, "disabled"=关闭
-WANDB_PROJECT="cosmos-CUP"        # WandB 项目名
-WANDB_ENTITY=""                   # WandB 用户名/团队名（留空则用账号默认值）
+WANDB_MODE="online"
+WANDB_PROJECT="cosmos-CUP"
+WANDB_ENTITY=""
 
 # 输出
-OUTPUT_ROOT="/data_16T/imaginaire4-output"  # 训练结果输出根目录（可改为你的路径）
-JOB_NAME="cosmos_2b_480p_cup_20260414_1051"  # 作业名，结果保存在 ${OUTPUT_ROOT}/cosmos_v2_finetune/cosmos_v2_finetune/${JOB_NAME}
+OUTPUT_ROOT="/mnt/wangxiaofa/cosmos-output"
+TIMESTAMP=$(date +%Y%m%d_%H%M)
+JOB_NAME="cosmos_2b_480p_cup_${TIMESTAMP}"
 
-# --------------------------- 以下一般不需要修改 -------------------------------
+# --------------------------- 解析命令行参数 ----------------------------------
 
-# 解析命令行参数（可覆盖上方变量）
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --nnodes)           NNODES="$2";           shift 2 ;;
@@ -57,7 +64,6 @@ while [[ $# -gt 0 ]]; do
         --stage)            STAGE="$2";             shift 2 ;;
         --max_action_dim)   MAX_ACTION_DIM="$2";    shift 2 ;;
         --max_state_dim)    MAX_STATE_DIM="$2";     shift 2 ;;
-        --dataset_len)      DATASET_LEN="$2";       shift 2 ;;
         --acc_step)         ACC_STEP="$2";          shift 2 ;;
         --max_iter)         MAX_ITER="$2";          shift 2 ;;
         --save_iter)        SAVE_ITER="$2";         shift 2 ;;
@@ -68,6 +74,8 @@ while [[ $# -gt 0 ]]; do
         --wandb_mode)       WANDB_MODE="$2";        shift 2 ;;
         --wandb_project)    WANDB_PROJECT="$2";     shift 2 ;;
         --wandb_entity)     WANDB_ENTITY="$2";      shift 2 ;;
+        --pretrained)       COSMOS_PRETRAINED="$2"; shift 2 ;;
+        --t5_embeddings)    T5_EMBEDDINGS="$2";     shift 2 ;;
         *) echo "Unknown argument: $1"; exit 1 ;;
     esac
 done
@@ -76,16 +84,27 @@ done
 export IMAGINAIRE_OUTPUT_ROOT="${OUTPUT_ROOT}"
 
 # WandB 环境变量
-export WANDB_API_KEY="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"
 export WANDB_MODE="${WANDB_MODE}"
 export WANDB_PROJECT="${WANDB_PROJECT}"
 if [ -n "${WANDB_ENTITY}" ]; then
     export WANDB_ENTITY="${WANDB_ENTITY}"
 fi
 
-# conda 环境（按需修改）
-# export PATH=/home/aiscuser/.conda/envs/lerobot/bin:$PATH
-# export LD_LIBRARY_PATH=/home/aiscuser/.conda/envs/lerobot/lib:$LD_LIBRARY_PATH
+# 复制 t5_embeddings pkl 到代码期望的路径（代码硬编码从 parent_dir 下读取）
+T5_PKL_SRC="${CODE_DIR}/cosmos_pretrained/t5_embeddings_${DATA_MIX}.pkl"
+T5_PKL_DST="${PARENT_DIR}/t5_embeddings_${DATA_MIX}.pkl"
+if [ -f "${T5_PKL_SRC}" ] && [ ! -f "${T5_PKL_DST}" ]; then
+    echo "Copying t5_embeddings: ${T5_PKL_SRC} -> ${T5_PKL_DST}"
+    cp "${T5_PKL_SRC}" "${T5_PKL_DST}"
+else
+    echo "t5_embeddings already at destination or source not found, skipping copy"
+    echo "  src=${T5_PKL_SRC}  dst=${T5_PKL_DST}"
+fi
+
+# HuggingFace 离线模式：YAML 中已设置 HF_HUB_OFFLINE=0，这里不再覆盖
+# 如需完全离线，取消下面两行的注释
+# export HF_HUB_OFFLINE=1
+# export TRANSFORMERS_OFFLINE=1
 
 echo "============================================"
 echo "  Cosmos-Policy Training for dataset_cup"
@@ -101,9 +120,13 @@ echo "  Save every:       ${SAVE_ITER} steps"
 echo "  Learning rate:    ${LR}"
 echo "  Action dim:       ${MAX_ACTION_DIM}"
 echo "  State dim:        ${MAX_STATE_DIM}"
+echo "  Pretrained:       ${COSMOS_PRETRAINED}"
+echo "  T5 embeddings:    ${T5_EMBEDDINGS}"
 echo "  Output dir:       ${OUTPUT_ROOT}/cosmos_v2_finetune/cosmos_v2_finetune/${JOB_NAME}"
 echo "  WandB:            ${WANDB_MODE} (project=${WANDB_PROJECT})"
 echo "============================================"
+
+cd "${CODE_DIR}/cosmos-policy"
 
 uv run --no-sync --extra cu128 --group libero --python 3.10 \
   torchrun \
@@ -123,6 +146,7 @@ uv run --no-sync --extra cu128 --group libero --python 3.10 \
     trainer.logging_iter=${LOGGING_ITER} \
     trainer.grad_accum_iter=${ACC_STEP} \
     checkpoint.save_iter=${SAVE_ITER} \
+    checkpoint.load_path="${COSMOS_PRETRAINED}" \
     optimizer.lr=${LR} \
     scheduler.cycle_lengths="[${SCHEDULER_CYCLE_LENGTHS},100000000000000]" \
     scheduler.warm_up_steps="[${SCHEDULER_WARM_UP_STEPS},0]" \
@@ -132,6 +156,5 @@ uv run --no-sync --extra cu128 --group libero --python 3.10 \
     dataloader_train.dataset.max_action_dim=${MAX_ACTION_DIM} \
     dataloader_train.dataset.max_state_dim=${MAX_STATE_DIM} \
     dataloader_train.dataset.dataset_len_one_epoch=${DATASET_LEN} \
-    dataloader_train.dataset.parent_dir=${PARENT_DIR}
-
-
+    dataloader_train.dataset.parent_dir=${PARENT_DIR} \
+    dataloader_train.dataset.t5_text_embeddings_path="${T5_EMBEDDINGS}"

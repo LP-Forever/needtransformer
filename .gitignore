@@ -1,1 +1,7 @@
 models/
+cosmos_pretrained/
+**/__pycache__/
+*.pyc
+*.pt
+*.pth
+*.pkl.lock

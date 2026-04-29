@@ -925,13 +925,18 @@ def get_checkpoint_by_hf(checkpoint_hf: str) -> str:
     repo_id = "/".join(parts[:2])  # org/repo
     filename = "/".join(parts[2:])  # path/to/file.pth
     log.info(f"Downloading checkpoint from HuggingFace: {repo_id}/{filename}")
-    path = hf_hub_download(
-        repo_id=repo_id,
-        repo_type="model",
-        filename=filename,
-    )
-    assert os.path.exists(path), path
-    return path
+    try:
+        path = hf_hub_download(
+            repo_id=repo_id,
+            repo_type="model",
+            filename=filename,
+        )
+        assert os.path.exists(path), path
+        return path
+    except (OSError, ValueError) as e:
+        log.warning(f"Could not download checkpoint from HuggingFace (offline?): {e}")
+        log.warning("Returning placeholder path; make sure to override checkpoint.load_path via opts.")
+        return checkpoint_hf
 
 
 @functools.lru_cache

@@ -1,0 +1,58 @@
+description: RoboVLMs training for custom_finetuning dataset on amlt cloud
+
+env_defaults:
+  NODES: 1
+  GPUS: 8
+  MEM: 40
+  JOB_NAME: robovlms-custom-train
+
+target:
+  service: sing
+  workspace_name: wsgcrrbt
+  name: palisades32
+
+storage:
+  my_output:
+    storage_account_name: azsussc
+    container_name: v-wangxiaofa
+    mount_dir: /mnt/wangxiaofa
+
+  data:
+    storage_account_name: azsussc
+    container_name: v-wenhuitan
+    mount_dir: /mnt/robotdata
+    is_output: false
+
+environment:
+  image: amlt-sing/acpt-torch2.7.1-py3.10-cuda12.6-ubuntu22.04
+  setup:
+    - cd $$AMLT_CODE_DIR/RoboVLMs
+    - pip install -e .
+    # KosMos 需要 transformers patch
+    # - cp tools/modeling_kosmos2.py $(python -c "import transformers; print(transformers.__path__[0])")/models/kosmos2/modeling_kosmos2.py
+    # 如用 openvla 数据格式，还需安装 openvla fork:
+    # - git clone https://github.com/lixinghang12/openvla && cd openvla && pip install -e . && cd ..
+
+code:
+  local_dir: $CONFIG_DIR/
+
+data:
+  storage_id: my_output
+
+jobs:
+  - name: $JOB_NAME
+    sku: ${NODES}x${MEM}G${GPUS}-A100
+    process_count_per_node: 1
+    sla_tier: Premium
+    execution_mode: basic
+    identity: managed
+    submit_args:
+      env:
+        AMLT_DOCKERFILE_TEMPLATE: default
+        _AZUREML_SINGULARITY_JOB_UAI: /subscriptions/3289a5dd-b901-4b63-9562-bbbdfffba9de/resourcegroups/ws/providers/Microsoft.ManagedIdentity/userAssignedIdentities/wsgcrrbt-identity
+        SHARED_MEMORY_PERCENT: 0.5
+        HF_HUB_OFFLINE: "0"
+
+    command:
+      - cd $$AMLT_CODE_DIR/RoboVLMs
+      - bash run_robovlms_train.sh
